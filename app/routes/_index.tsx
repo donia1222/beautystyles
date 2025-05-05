@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react"
 import { motion, useAnimation, type Variants } from "framer-motion"
 import Header from "../components/header"
 import Footer from "../components/footer"
-import { Scissors, Star, Users, Clock, ChevronRight } from "lucide-react"
+import { Scissors, Star, Users, Clock, ChevronRight, Heart } from "lucide-react"
 
 export const meta: MetaFunction = () => {
   return [
@@ -187,6 +187,47 @@ export default function Index() {
           </div>
         </section>
 
+        {/* Nueva sección con animación de texto deslizante */}
+        <div className="relative py-16 overflow-hidden bg-gradient-to-r from-[#ff4081]/5 to-[#ff4081]/10 flex items-center justify-center">
+          {/* Texto flotante CENTRADO que se mueve con el scroll */}
+          <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+            <motion.div
+              className="text-8xl font-bold text-[#ff4081]/10 whitespace-nowrap"
+              animate={{
+                x: [0, -1000],
+              }}
+              transition={{
+                x: {
+                  repeat: Number.POSITIVE_INFINITY,
+                  repeatType: "loop",
+                  duration: 25,
+                  ease: "linear",
+                },
+              }}
+            >
+              SCHÖNHEIT • STIL • ELEGANZ • PERFEKTION • QUALITÄT • INNOVATION • SCHÖNHEIT • STIL • ELEGANZ • PERFEKTION
+              • QUALITÄT • INNOVATION •
+            </motion.div>
+          </div>
+
+          {/* Elemento decorativo que pulsa */}
+          <motion.div
+            className="relative z-10 text-[#ff4081]"
+            animate={{
+              scale: [1, 1.2, 1],
+              rotate: [0, 10, -10, 0],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Number.POSITIVE_INFINITY,
+              repeatType: "loop",
+              ease: "easeInOut",
+            }}
+          >
+  <Scissors size={80} strokeWidth={1} />
+          </motion.div>
+        </div>
+
         {/* Services Preview */}
         <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
           <div className="container mx-auto px-4">
@@ -264,14 +305,7 @@ export default function Index() {
           </div>
         </section>
 
-        {/* New 3D Floating Text Animation */}
-        <section className="py-20 overflow-hidden relative mb-20 bg-gradient-to-b from-white to-gray-50">
-          <div className="container mx-auto px-4">
-            <div className="floating-text-container">
-              <FloatingTextAnimation />
-            </div>
-          </div>
-        </section>
+ 
 
         {/* CTA Section */}
         <section className="py-20 bg-gradient-to-r from-[#ff4081] to-[#fa4b86] text-white">
@@ -382,7 +416,7 @@ function FloatingTextAnimation() {
   return (
     <motion.div
       ref={containerRef}
-      className="relative py-12 text-center flex flex-wrap justify-center transform-gpu"
+      className="relative text-center flex flex-wrap justify-center transform-gpu"
       style={{
         perspective: "1000px",
         transformStyle: "preserve-3d",
@@ -410,7 +444,7 @@ function FloatingTextAnimation() {
             {Array.from(word).map((letter, letterIndex) => (
               <motion.span
                 key={`letter-${wordIndex}-${letterIndex}`}
-                className="inline-block text-5xl md:text-7xl font-bold text-gray-100"
+                className="inline-block text-5xl md:text-7xl font-bold text-gray-500"
                 variants={letterVariants}
                 custom={wordIndex * 10 + letterIndex}
                 style={{

@@ -2,7 +2,8 @@
 
 import type { MetaFunction } from "@remix-run/node"
 import { Link, useLocation } from "@remix-run/react"
-import { useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
+import { motion, useAnimation, type Variants } from "framer-motion"
 import Header from "../components/header"
 import Footer from "../components/footer"
 import { Scissors, Star, Users, Clock, ChevronRight } from "lucide-react"
@@ -16,6 +17,9 @@ export const meta: MetaFunction = () => {
 
 export default function Index() {
   const location = useLocation()
+  const videoElementRef = useRef<HTMLVideoElement>(null)
+  const [videoLoaded, setVideoLoaded] = useState(false)
+  const [videoError, setVideoError] = useState(false)
 
   // Añadir logs para depuración
   console.log("Index component rendered, path:", location.pathname)
@@ -46,24 +50,88 @@ export default function Index() {
 
     menuToggle?.addEventListener("change", handleMenuToggle)
 
-    // Añadir efecto de texto desplazándose con el scroll
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY
-      const textContainer = document.getElementById("scrolling-text-container")
-
-      if (textContainer) {
-        // Calcula el desplazamiento basado en la posición del scroll
-        // Esto moverá el texto de derecha a izquierda mientras se hace scroll hacia abajo
-        const translateX = -(scrollPosition * 0.1) % 100
-        textContainer.style.transform = `translateX(${translateX}%)`
-      }
-    }
-
-    window.addEventListener("scroll", handleScroll)
-
     return () => {
       menuToggle?.removeEventListener("change", handleMenuToggle)
-      window.removeEventListener("scroll", handleScroll)
+    }
+  }, [])
+
+  useEffect(() => {
+    const videoElement = videoElementRef.current
+    if (videoElement) {
+      const handleLoadedData = () => {
+        console.log("Video loaded successfully")
+        setVideoLoaded(true)
+      }
+
+      const handleError = (e: any) => {
+        console.error("Error loading video:", e)
+        setVideoError(true)
+      }
+
+      videoElement.addEventListener("loadeddata", handleLoadedData)
+      videoElement.addEventListener("error", handleError)
+
+      return () => {
+        videoElement.removeEventListener("loadeddata", handleLoadedData)
+        videoElement.removeEventListener("error", handleError)
+      }
+    }
+  }, [])
+
+  const [styleElement, setStyleElement] = useState<HTMLStyleElement | null>(null)
+
+  useEffect(() => {
+    const style = document.createElement("style")
+    style.innerHTML = `
+      /* Video parallax effect */
+      main {
+        position: relative;
+        z-index: 1;
+      }
+      
+      section:not(:first-child) {
+        position: relative;
+        z-index: 2;
+        background-color: white;
+      }
+
+      video#background-video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: 0;
+      }
+      
+      .floating-text-container {
+        perspective: 1500px;
+        transform-style: preserve-3d;
+      }
+      
+      .text-3d {
+        transform-style: preserve-3d;
+      }
+      
+      @keyframes float {
+        0% {
+          transform: translateY(0px) translateZ(0px) rotateX(0deg);
+        }
+        50% {
+          transform: translateY(-20px) translateZ(50px) rotateX(5deg);
+        }
+        100% {
+          transform: translateY(0px) translateZ(0px) rotateX(0deg);
+        }
+      }
+    `
+    document.head.appendChild(style)
+    setStyleElement(style)
+
+    return () => {
+      document.head.removeChild(style)
+      setStyleElement(null)
     }
   }, [])
 
@@ -74,13 +142,21 @@ export default function Index() {
       <main className="flex-grow pt-16">
         {/* Hero Section */}
         <section className="relative h-screen flex items-center">
-          <div
-            className="absolute inset-0 bg-cover bg-center z-0"
-            style={{
-              backgroundImage: "url('https://beautystyle.lweb.ch/images/6817e8d8ddb8f.png')",
-              backgroundAttachment: "fixed",
-            }}
-          >
+          <div className="absolute inset-0 z-0 overflow-hidden">
+            <video
+              className="absolute w-full h-full object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+              poster="https://beautystyle.lweb.ch/images/poster.png"
+              id="background-video"
+              style={{ display: "block" }}
+              ref={videoElementRef}
+            >
+              <source src="https://beautystyle.lweb.ch/images/1106187_1080p_Care_1280x720.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/40"></div>
           </div>
 
@@ -187,19 +263,16 @@ export default function Index() {
             </div>
           </div>
         </section>
-        {/* Animated Scrolling Text Section */}
-        <section className="py-16 overflow-hidden relative mb-20">
-          <div
-            id="scrolling-text-container"
-            className="whitespace-nowrap transition-transform duration-500 ease-out"
-            style={{ transform: "translateX(0%)" }}
-          >
-            <div className="text-6xl md:text-8xl font-bold text-gray-100 inline-block">
-              BEAUTY • STYLE • ELEGANZ • PERFEKTION • QUALITÄT • INNOVATION • BEAUTY • STYLE • ELEGANZ • PERFEKTION •
-              QUALITÄT • INNOVATION •
+
+        {/* New 3D Floating Text Animation */}
+        <section className="py-20 overflow-hidden relative mb-20 bg-gradient-to-b from-white to-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="floating-text-container">
+              <FloatingTextAnimation />
             </div>
           </div>
         </section>
+
         {/* CTA Section */}
         <section className="py-20 bg-gradient-to-r from-[#ff4081] to-[#fa4b86] text-white">
           <div className="container mx-auto px-4 text-center">
@@ -216,32 +289,170 @@ export default function Index() {
             </Link>
           </div>
         </section>
-
-
       </main>
 
       <Footer />
     </div>
   )
+}
 
-  // Añadir estos estilos CSS en tu archivo de estilos global o en un componente de estilo
+// Letter animation component with 3D floating effect
+function FloatingTextAnimation() {
+  const text = "BEAUTY • STYLE • ELEGANZ • PERFEKTION • QUALITÄT • INNOVATION •"
+  const controls = useAnimation()
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Break the text into individual words and then letters
+  const words = text.split(" ")
+
   useEffect(() => {
-    const style = document.createElement("style")
-    style.innerHTML = `
-      #scrolling-text-container {
-        background: linear-gradient(to right, #ff4081, #fa4b86);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        padding: 1rem 0;
+    controls.start("visible")
+  }, [controls])
+
+  const letterVariants: Variants = {
+    hidden: {
+      opacity: 0,
+      y: 20,
+      rotateX: 90,
+    },
+    visible: (i: number) => ({
+      opacity: 1,
+      y: 0,
+      rotateX: 0,
+      transition: {
+        delay: i * 0.02,
+        duration: 0.5,
+        repeat: Number.POSITIVE_INFINITY,
+        repeatType: "reverse",
+        repeatDelay: 2,
+        ease: "easeInOut",
+      },
+    }),
+  }
+
+  const wordVariants: Variants = {
+    hidden: {
+      opacity: 0,
+      y: 50,
+      z: -100,
+    },
+    visible: (i: number) => ({
+      opacity: 1,
+      y: 0,
+      z: 0,
+      transition: {
+        delay: i * 0.1,
+        duration: 1,
+        ease: "easeOut",
+      },
+    }),
+  }
+
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.3,
+      },
+    },
+  }
+
+  // Simulate 3D perspective movement based on cursor position
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        const x = e.clientX - rect.left - rect.width / 2
+        const y = e.clientY - rect.top - rect.height / 2
+        setMousePosition({ x, y })
       }
-    `
-    document.head.appendChild(style)
+    }
+
+    window.addEventListener("mousemove", handleMouseMove)
 
     return () => {
-      document.head.removeChild(style)
+      window.removeEventListener("mousemove", handleMouseMove)
     }
   }, [])
+
+  return (
+    <motion.div
+      ref={containerRef}
+      className="relative py-12 text-center flex flex-wrap justify-center transform-gpu"
+      style={{
+        perspective: "1000px",
+        transformStyle: "preserve-3d",
+      }}
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      <motion.div
+        className="text-3d w-full text-center"
+        style={{
+          transformStyle: "preserve-3d",
+          transform: `rotateX(${mousePosition.y * 0.01}deg) rotateY(${mousePosition.x * 0.01}deg)`,
+        }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
+      >
+        {words.map((word, wordIndex) => (
+          <motion.div
+            key={`word-${wordIndex}`}
+            className="inline-block mx-2 my-4"
+            variants={wordVariants}
+            custom={wordIndex}
+            style={{ transformStyle: "preserve-3d" }}
+          >
+            {Array.from(word).map((letter, letterIndex) => (
+              <motion.span
+                key={`letter-${wordIndex}-${letterIndex}`}
+                className="inline-block text-5xl md:text-7xl font-bold text-gray-100"
+                variants={letterVariants}
+                custom={wordIndex * 10 + letterIndex}
+                style={{
+                  display: "inline-block",
+                  transformStyle: "preserve-3d",
+                  textShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                }}
+              >
+                {letter}
+              </motion.span>
+            ))}
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* Decorative 3D particles */}
+      <div className="absolute inset-0 pointer-events-none">
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={`particle-${i}`}
+            className="absolute h-2 w-2 rounded-full bg-[#ff4081]"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              y: [0, Math.random() * -100, 0],
+              x: [0, Math.random() * 100 - 50, 0],
+              opacity: [0, 0.7, 0],
+              scale: [0, Math.random() * 2 + 0.5, 0],
+            }}
+            transition={{
+              duration: Math.random() * 5 + 3,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "easeInOut",
+              delay: Math.random() * 5,
+            }}
+          />
+        ))}
+      </div>
+    </motion.div>
+  )
 }
 
 const services = [

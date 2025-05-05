@@ -3,10 +3,11 @@
 import type { MetaFunction } from "@remix-run/node"
 import { Link, useLocation } from "@remix-run/react"
 import { useEffect, useRef, useState } from "react"
-import { motion, useAnimation, type Variants } from "framer-motion"
+import { motion, useScroll, useTransform } from "framer-motion"
 import Header from "../components/header"
 import Footer from "../components/footer"
-import { Scissors, Star, Users, Clock, ChevronRight, Heart } from "lucide-react"
+import { Scissors, Star, Users, Clock, ChevronRight, Heart, ArrowRight, Camera, Award, Sparkles } from "lucide-react"
+import { useInView } from "react-intersection-observer"
 
 export const meta: MetaFunction = () => {
   return [
@@ -21,14 +22,25 @@ export default function Index() {
   const [videoLoaded, setVideoLoaded] = useState(false)
   const [videoError, setVideoError] = useState(false)
 
-  // Añadir logs para depuración
-  console.log("Index component rendered, path:", location.pathname)
+  // Referencias para efectos de scroll
+  const servicesRef = useRef<HTMLDivElement>(null)
+  const featuresRef = useRef<HTMLDivElement>(null)
+  const heroRef = useRef<HTMLDivElement>(null)
+
+  // Efectos de scroll para el hero
+  const { scrollYProgress: heroScrollProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  })
+
+  const heroOpacity = useTransform(heroScrollProgress, [0, 1], [1, 0])
+  const heroScale = useTransform(heroScrollProgress, [0, 1], [1, 0.8])
+  const heroY = useTransform(heroScrollProgress, [0, 1], [0, 100])
 
   // Cerrar el menú móvil cuando cambia la ruta
   useEffect(() => {
     const menuToggle = document.getElementById("mobile-menu-toggle") as HTMLInputElement
     if (menuToggle && menuToggle.checked) {
-      console.log("Closing menu on route change")
       menuToggle.checked = false
       document.body.classList.remove("menu-open")
     }
@@ -40,10 +52,8 @@ export default function Index() {
 
     const handleMenuToggle = () => {
       if (menuToggle.checked) {
-        console.log("Menu opened, preventing scroll")
         document.body.classList.add("menu-open")
       } else {
-        console.log("Menu closed, enabling scroll")
         document.body.classList.remove("menu-open")
       }
     }
@@ -55,11 +65,11 @@ export default function Index() {
     }
   }, [])
 
+  // Manejar la carga del video
   useEffect(() => {
     const videoElement = videoElementRef.current
     if (videoElement) {
       const handleLoadedData = () => {
-        console.log("Video loaded successfully")
         setVideoLoaded(true)
       }
 
@@ -78,8 +88,7 @@ export default function Index() {
     }
   }, [])
 
-  const [styleElement, setStyleElement] = useState<HTMLStyleElement | null>(null)
-
+  // Estilos para efectos de parallax
   useEffect(() => {
     const style = document.createElement("style")
     style.innerHTML = `
@@ -125,14 +134,70 @@ export default function Index() {
           transform: translateY(0px) translateZ(0px) rotateX(0deg);
         }
       }
+      
+      .service-card {
+        transition: all 0.5s cubic-bezier(0.17, 0.55, 0.55, 1);
+      }
+      
+      .service-card:hover {
+        transform: translateY(-10px);
+      }
+      
+      .feature-icon {
+        transition: all 0.3s ease;
+      }
+      
+      .feature-card:hover .feature-icon {
+        transform: scale(1.2) rotate(10deg);
+      }
+      
+      .hero-content {
+        animation: fadeIn 1.2s ease-out;
+      }
+      
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      .hero-button {
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .hero-button::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateX(-100%);
+        transition: transform 0.6s ease;
+      }
+      
+      .hero-button:hover::after {
+        transform: translateX(0);
+      }
     `
     document.head.appendChild(style)
-    setStyleElement(style)
 
     return () => {
       document.head.removeChild(style)
-      setStyleElement(null)
     }
+  }, [])
+
+  // Estado para la galería interactiva
+  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0)
+
+  // Cambiar imagen de galería automáticamente
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveGalleryIndex((prev) => (prev + 1) % galleryImages.length)
+    }, 3000)
+
+    return () => clearInterval(interval)
   }, [])
 
   return (
@@ -140,9 +205,12 @@ export default function Index() {
       <Header />
 
       <main className="flex-grow pt-16">
-        {/* Hero Section */}
-        <section className="relative h-screen flex items-center">
-          <div className="absolute inset-0 z-0 overflow-hidden">
+        {/* Hero Section con Parallax */}
+        <section ref={heroRef} className="relative h-screen flex items-center">
+          <motion.div
+            className="absolute inset-0 z-0 overflow-hidden"
+            style={{ opacity: heroOpacity, scale: heroScale }}
+          >
             <video
               className="absolute w-full h-full object-cover"
               autoPlay
@@ -158,38 +226,112 @@ export default function Index() {
               Your browser does not support the video tag.
             </video>
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/40"></div>
-          </div>
+          </motion.div>
 
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="max-w-2xl animate-fade-in">
-              <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight">
-                Entdecken Sie Ihren <span className="text-[#ff4081]">einzigartigen Stil</span>
-              </h1>
-              <p className="text-xl text-white/90 mb-8 leading-relaxed">
+          <motion.div className="container mx-auto px-4 relative z-10" style={{ y: heroY }}>
+            <motion.div
+              className="max-w-2xl hero-content"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              <motion.h1
+                className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+              >
+                Entdecken Sie Ihren{" "}
+                <motion.span
+                  className="text-[#ff4081]"
+                  animate={{
+                    textShadow: [
+                      "0 0 5px rgba(255,64,129,0.3)",
+                      "0 0 20px rgba(255,64,129,0.7)",
+                      "0 0 5px rgba(255,64,129,0.3)",
+                    ],
+                  }}
+                  transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+                >
+                  einzigartigen Stil
+                </motion.span>
+              </motion.h1>
+
+              <motion.p
+                className="text-xl text-white/90 mb-8 leading-relaxed"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+              >
                 Bei BeautyStyle verwandeln wir Ihr Image mit den neuesten personalisierten Schönheitsbehandlungen und
                 -techniken.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link
-                  to="/reservar"
-                  className="bg-[#ff4081] text-white px-8 py-3 rounded-full text-lg font-medium hover:bg-[#ff4081]/90 transition-all duration-300 transform hover:translate-y-[-2px] shadow-lg hover:shadow-xl"
-                >
-                  Jetzt buchen
-                </Link>
-                <Link
-                  to="/servicios"
-                  className="bg-white/10 backdrop-blur-sm text-white border border-white/20 px-8 py-3 rounded-full text-lg font-medium hover:bg-white/20 transition-all duration-300 transform hover:translate-y-[-2px]"
-                >
-                  Unsere Dienstleistungen
-                </Link>
-              </div>
-            </div>
+              </motion.p>
+
+              <motion.div
+                className="flex flex-col sm:flex-row gap-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.5 }}
+              >
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+                  <Link
+                    to="/termin"
+                    className="hero-button bg-[#ff4081] text-white px-8 py-3 rounded-full text-lg font-medium hover:bg-[#ff4081]/90 transition-all duration-300 transform hover:translate-y-[-2px] shadow-lg hover:shadow-xl flex items-center justify-center"
+                  >
+                    <Calendar className="mr-2" size={18} />
+                    Jetzt buchen
+                  </Link>
+                </motion.div>
+
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+                  <Link
+                    to="/servicios"
+                    className="hero-button bg-white/10 backdrop-blur-sm text-white border border-white/20 px-8 py-3 rounded-full text-lg font-medium hover:bg-white/20 transition-all duration-300 transform hover:translate-y-[-2px] flex items-center justify-center"
+                  >
+                    <Scissors className="mr-2" size={18} />
+                    Unsere Dienstleistungen
+                  </Link>
+                </motion.div>
+              </motion.div>
+
+              {/* Indicadores de scroll */}
+              
+            </motion.div>
+          </motion.div>
+
+          {/* Partículas decorativas */}
+          <div className="absolute inset-0 pointer-events-none">
+            {Array.from({ length: 15 }).map((_, i) => (
+              <motion.div
+                key={`hero-particle-${i}`}
+                className="absolute rounded-full bg-white"
+                style={{
+                  width: Math.random() * 4 + 1,
+                  height: Math.random() * 4 + 1,
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  opacity: Math.random() * 0.5 + 0.2,
+                }}
+                animate={{
+                  y: [0, Math.random() * -50 - 10, 0],
+                  x: [0, Math.random() * 30 - 15, 0],
+                  opacity: [0.2, 0.5, 0.2],
+                }}
+                transition={{
+                  duration: Math.random() * 5 + 3,
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: "easeInOut",
+                }}
+              />
+            ))}
           </div>
         </section>
 
-        {/* Nueva sección con animación de texto deslizante */}
-        <div className="relative py-16 overflow-hidden bg-gradient-to-r from-[#ff4081]/5 to-[#ff4081]/10 flex items-center justify-center">
-          {/* Texto flotante CENTRADO que se mueve con el scroll */}
+
+
+        {/* Sección con animación de texto deslizante */}
+        <div className="relative py-16 overflow-hidden bg-white flex items-center justify-center">
+          {/* Texto flotante CENTRADO que se mueve */}
           <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
             <motion.div
               className="text-8xl font-bold text-[#ff4081]/10 whitespace-nowrap"
@@ -224,103 +366,434 @@ export default function Index() {
               ease: "easeInOut",
             }}
           >
-  <Scissors size={80} strokeWidth={1} />
+             <Scissors size={80} strokeWidth={1} />
           </motion.div>
         </div>
 
-        {/* Services Preview */}
-        <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
+        {/* Services Preview con Hover 3D */}
+        <section ref={servicesRef} className="py-20 bg-gradient-to-b from-gray-50 to-white">
           <div className="container mx-auto px-4">
-            <div className="text-center mb-16 animate-slide-up">
-              <span className="text-[#ff4081] font-medium mb-2 inline-block">UNSERE EXPERTISE</span>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Unsere Dienstleistungen</h2>
-              <p className="text-gray-600 max-w-2xl mx-auto">
+            <motion.div
+              className="text-center mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+            >
+              <motion.span
+                className="text-[#ff4081] font-medium mb-2 inline-block px-4 py-1 rounded-full bg-[#ff4081]/10"
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                viewport={{ once: true }}
+              >
+                UNSERE EXPERTISE
+              </motion.span>
+              <motion.h2
+                className="text-3xl md:text-4xl font-bold mb-4 mt-3"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                viewport={{ once: true }}
+              >
+                Unsere Dienstleistungen
+              </motion.h2>
+              <motion.p
+                className="text-gray-600 max-w-2xl mx-auto"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                viewport={{ once: true }}
+              >
                 Wir bieten eine breite Palette von Schönheitsdienstleistungen, um alle Ihre Bedürfnisse zu erfüllen.
-              </p>
-            </div>
+              </motion.p>
+            </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {services.map((service, index) => (
-                <div
+                <motion.div
                   key={index}
-                  className="bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl animate-slide-up group"
-                  style={{ animationDelay: `${index * 0.1}s` }}
+                  className="service-card bg-white rounded-xl shadow-lg overflow-hidden group"
+                  initial={{ opacity: 0, y: 50 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  whileHover={{
+                    scale: 1.03,
+                    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                    rotateY: 5,
+                    rotateX: -5,
+                  }}
                 >
-                  <div className="relative overflow-hidden">
+                  <div className="relative overflow-hidden h-64">
                     <img
                       src={service.image || "/placeholder.svg"}
                       alt={service.title}
-                      className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold mb-2">{service.title}</h3>
-                    <p className="text-gray-600 mb-4">{service.description}</p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-[#ff4081] font-semibold">Ab {service.price} CHF</span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
+                      <div className="p-6 transform translate-y-10 group-hover:translate-y-0 transition-transform duration-300">
+                        <motion.button
+                          className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-white/30 transition-colors"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          Details ansehen
+                        </motion.button>
+                      </div>
+                    </div>
+
+                    {/* Badge de precio */}
+                    <div className="absolute top-4 right-4 bg-[#ff4081] text-white px-3 py-1 rounded-full text-sm font-medium shadow-lg">
+                      Ab {service.price} CHF
                     </div>
                   </div>
-                </div>
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold mb-2 group-hover:text-[#ff4081] transition-colors">
+                      {service.title}
+                    </h3>
+                    <p className="text-gray-600 mb-4">{service.description}</p>
+                    <Link
+                      to={`/servicios#${service.slug}`}
+                      className="inline-flex items-center text-[#ff4081] font-medium hover:underline"
+                    >
+                      Mehr erfahren{" "}
+                      <ArrowRight size={16} className="ml-1 transition-transform group-hover:translate-x-1" />
+                    </Link>
+                  </div>
+                </motion.div>
               ))}
             </div>
 
-            <div className="text-center mt-12">
-              <Link
-                to="/servicios"
-                className="inline-flex items-center bg-transparent border-2 border-[#ff4081] text-[#ff4081] px-6 py-3 rounded-full hover:bg-[#ff4081] hover:text-white transition-all duration-300"
+            <motion.div
+              className="text-center mt-12"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              viewport={{ once: true }}
+            >
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link
+                  to="/servicios"
+                  className="inline-flex items-center bg-transparent border-2 border-[#ff4081] text-[#ff4081] px-6 py-3 rounded-full hover:bg-[#ff4081] hover:text-white transition-all duration-300"
+                >
+                  Alle Dienstleistungen anzeigen <ChevronRight size={16} className="ml-1" />
+                </Link>
+              </motion.div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Galería interactiva */}
+        <section className="py-20 bg-white overflow-hidden">
+          <div className="container mx-auto px-4">
+            <motion.div
+              className="text-center mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+            >
+              <motion.span
+                className="text-[#ff4081] font-medium mb-2 inline-block px-4 py-1 rounded-full bg-[#ff4081]/10"
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                viewport={{ once: true }}
               >
-                Alle Dienstleistungen anzeigen <ChevronRight size={16} className="ml-1" />
-              </Link>
+                UNSERE ARBEITEN
+              </motion.span>
+              <motion.h2
+                className="text-3xl md:text-4xl font-bold mb-4 mt-3"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                viewport={{ once: true }}
+              >
+                Galerie
+              </motion.h2>
+              <motion.p
+                className="text-gray-600 max-w-2xl mx-auto"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                viewport={{ once: true }}
+              >
+                Entdecken Sie einige unserer besten Arbeiten und lassen Sie sich inspirieren.
+              </motion.p>
+            </motion.div>
+
+            <div className="relative">
+              <div className="overflow-hidden rounded-xl shadow-xl">
+                <motion.div
+                  className="flex transition-transform duration-500 ease-out h-[400px] md:h-[500px]"
+                  animate={{ x: `-${activeGalleryIndex * 100}%` }}
+                >
+                  {galleryImages.map((image, index) => (
+                    <div key={index} className="min-w-full relative">
+                      <img
+                        src={image.src || "/placeholder.svg"}
+                        alt={image.alt}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent flex flex-col justify-end p-8">
+                        <h3 className="text-white text-xl font-bold">{image.title}</h3>
+                        <p className="text-white/80">{image.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </motion.div>
+              </div>
+
+              {/* Controles de galería */}
+              <div className="flex justify-center mt-6 space-x-2">
+                {galleryImages.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setActiveGalleryIndex(index)}
+                    className={`w-3 h-3 rounded-full transition-all ${
+                      activeGalleryIndex === index ? "bg-[#ff4081] w-6" : "bg-gray-300"
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+
+              <motion.div
+                className="text-center mt-8"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.5 }}
+                viewport={{ once: true }}
+              >
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link
+                    to="/galeria"
+                    className="inline-flex items-center bg-transparent border-2 border-[#ff4081] text-[#ff4081] px-6 py-3 rounded-full hover:bg-[#ff4081] hover:text-white transition-all duration-300"
+                  >
+                    <Camera size={18} className="mr-2" />
+                    Komplette Galerie ansehen
+                  </Link>
+                </motion.div>
+              </motion.div>
             </div>
           </div>
         </section>
 
-        {/* Why Choose Us */}
-        <section className="py-20 bg-white">
+        {/* Why Choose Us con animaciones */}
+        <section ref={featuresRef} className="py-20 bg-gradient-to-b from-gray-50 to-white">
           <div className="container mx-auto px-4">
-            <div className="text-center mb-16 animate-slide-up">
-              <span className="text-[#ff4081] font-medium mb-2 inline-block">UNSERE VORTEILE</span>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Warum uns wählen?</h2>
-              <p className="text-gray-600 max-w-2xl mx-auto">
+            <motion.div
+              className="text-center mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+            >
+              <motion.span
+                className="text-[#ff4081] font-medium mb-2 inline-block px-4 py-1 rounded-full bg-[#ff4081]/10"
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                viewport={{ once: true }}
+              >
+                UNSERE VORTEILE
+              </motion.span>
+              <motion.h2
+                className="text-3xl md:text-4xl font-bold mb-4 mt-3"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                viewport={{ once: true }}
+              >
+                Warum uns wählen?
+              </motion.h2>
+              <motion.p
+                className="text-gray-600 max-w-2xl mx-auto"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                viewport={{ once: true }}
+              >
                 Wir zeichnen uns durch einen außergewöhnlichen und personalisierten Service aus.
-              </p>
-            </div>
+              </motion.p>
+            </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {features.map((feature, index) => (
-                <div
+                <motion.div
                   key={index}
-                  className="bg-gray-50 p-8 rounded-xl shadow-sm text-center animate-slide-up hover:shadow-md transition-all duration-300 hover:translate-y-[-5px] border border-gray-100"
-                  style={{ animationDelay: `${index * 0.1}s` }}
+                  className="feature-card bg-white p-8 rounded-xl shadow-md text-center border border-gray-100 hover:border-[#ff4081]/30 transition-colors"
+                  initial={{ opacity: 0, y: 50 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  whileHover={{
+                    y: -10,
+                    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                  }}
                 >
-                  <div className="bg-gradient-to-br from-[#ff4081]/20 to-[#ff4081]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <div className="bg-gradient-to-br from-[#ff4081]/20 to-[#ff4081]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 feature-icon">
                     <feature.icon className="text-[#ff4081]" size={24} />
                   </div>
                   <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
                   <p className="text-gray-600">{feature.description}</p>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
         </section>
 
- 
-
-        {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-r from-[#ff4081] to-[#fa4b86] text-white">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6 animate-slide-up">Bereit, Ihr Image zu verändern?</h2>
-            <p className="text-white/90 max-w-2xl mx-auto mb-8 animate-slide-up" style={{ animationDelay: "0.1s" }}>
-              Buchen Sie Ihren Termin noch heute und lassen Sie sich von unseren Profis überraschen.
-            </p>
-            <Link
-              to="/reservar"
-              className="inline-block bg-white text-[#ff4081] px-8 py-3 rounded-full text-lg font-medium hover:bg-gray-100 transition-all duration-300 transform hover:translate-y-[-2px] shadow-lg hover:shadow-xl animate-slide-up"
-              style={{ animationDelay: "0.2s" }}
+        {/* Sección de testimonios */}
+        <section className="py-20 bg-white">
+          <div className="container mx-auto px-4">
+            <motion.div
+              className="text-center mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
             >
-              Jetzt buchen
-            </Link>
+              <motion.span
+                className="text-[#ff4081] font-medium mb-2 inline-block px-4 py-1 rounded-full bg-[#ff4081]/10"
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                viewport={{ once: true }}
+              >
+                KUNDENSTIMMEN
+              </motion.span>
+              <motion.h2
+                className="text-3xl md:text-4xl font-bold mb-4 mt-3"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                viewport={{ once: true }}
+              >
+                Was unsere Kunden sagen
+              </motion.h2>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {testimonials.map((testimonial, index) => (
+                <motion.div
+                  key={index}
+                  className="bg-gray-50 p-6 rounded-xl shadow-md relative"
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  whileHover={{ y: -5 }}
+                >
+                  <div className="absolute -top-4 -left-4 text-[#ff4081] opacity-20">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M11.192 15.757c0-.88-.23-1.618-.69-2.217-.326-.412-.768-.683-1.327-.812-.55-.128-1.07-.137-1.54-.028-.16-.95.1-1.626.41-2.032.76-1.018 1.058-1.733.906-2.141-.13-.352-.51-.593-1.155-.724-.33-.053-.658-.035-.953.054-.295.089-.527.236-.695.444-.387.465-.57 1.102-.55 1.912.01.467-.01.846-.06 1.138-.07.438-.21.843-.42 1.212.19.49.48.84.88 1.06.39.22.78.32 1.19.32.45 0 .8-.13 1.05-.4.25-.27.4-.6.45-.99.05-.21.08-.49.08-.84 0-.46.1-.82.29-1.09.19-.27.45-.4.78-.4.36 0 .65.12.88.35.22.23.33.56.33.99 0 .49-.18.94-.54 1.35-.36.41-.86.74-1.49.99-.64.25-1.39.37-2.27.37-.86 0-1.63-.17-2.3-.51-.67-.34-1.19-.82-1.54-1.44-.35-.62-.52-1.33-.52-2.13 0-.9.22-1.69.67-2.39.45-.7 1.06-1.24 1.83-1.63.77-.39 1.65-.59 2.63-.59 1.14 0 2.13.26 2.98.78.85.52 1.5 1.22 1.97 2.09.47.87.7 1.82.7 2.83 0 1.1-.23 2.08-.7 2.93-.47.85-1.12 1.53-1.97 2.04-.85.51-1.84.76-2.98.76-1.4 0-2.57-.35-3.51-1.06-.93-.71-1.51-1.73-1.74-3.07M8.13 12.04c.28-.83.42-1.7.42-2.6 0-1.22-.2-2.4-.6-3.54-.4-1.14-.99-2.13-1.77-2.98-.78-.85-1.76-1.52-2.95-2.01-1.19-.49-2.54-.73-4.03-.73L0 5.03c1.27 0 2.24.08 2.91.25.67.17 1.16.43 1.47.8.31.37.47.88.47 1.52 0 .4-.12.9-.37 1.51-.25.61-.42 1.11-.51 1.5-.09.39-.14.83-.14 1.31 0 .76.11 1.41.34 1.95.23.55.55.97.97 1.27.42.3.93.45 1.53.45.7 0 1.28-.18 1.73-.55.45-.37.77-.86.96-1.49.19-.62.29-1.3.29-2.02 0-.64-.06-1.12-.17-1.45-.11-.33-.27-.57-.48-.72-.21-.15-.48-.22-.8-.22-.3 0-.55.07-.76.22-.21.15-.36.35-.46.61-.1.26-.15.55-.15.89 0 .4-.05.71-.16.95-.11.24-.27.43-.48.57-.21.14-.47.2-.77.2-.49 0-.87-.18-1.14-.55-.27-.37-.4-.84-.4-1.43 0-.57.13-1.08.4-1.53.27-.45.65-.8 1.14-1.04.49-.25 1.05-.37 1.68-.37.78 0 1.48.17 2.09.52.61.35 1.09.84 1.44 1.47.35.63.52 1.36.52 2.18 0 .75-.15 1.45-.45 2.09-.3.64-.74 1.16-1.31 1.55-.57.39-1.25.59-2.03.59-.7 0-1.32-.17-1.86-.51-.54-.34-.95-.8-1.23-1.38-.28-.58-.42-1.22-.42-1.92 0-.34.03-.66.08-.97.05-.31.13-.63.24-.95z" />
+                    </svg>
+                  </div>
+
+                  <div className="flex items-center space-x-1 mb-4">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        size={18}
+                        className={i < testimonial.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}
+                      />
+                    ))}
+                  </div>
+
+                  <p className="text-gray-600 mb-6 italic">"{testimonial.text}"</p>
+
+                  <div className="flex items-center">
+                    <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center mr-3 overflow-hidden">
+                      {testimonial.image ? (
+                        <img
+                          src={testimonial.image || "/placeholder.svg"}
+                          alt={testimonial.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="font-semibold text-gray-500">
+                          {testimonial.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-medium">{testimonial.name}</h4>
+                      <p className="text-sm text-gray-500">{testimonial.date}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section con animaciones */}
+        <section className="py-20 bg-gradient-to-r from-[#ff4081] to-[#fa4b86] text-white relative overflow-hidden">
+          {/* Partículas decorativas */}
+          <div className="absolute inset-0 pointer-events-none">
+            {Array.from({ length: 20 }).map((_, i) => (
+              <motion.div
+                key={`cta-particle-${i}`}
+                className="absolute h-2 w-2 rounded-full bg-white"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  opacity: Math.random() * 0.3 + 0.1,
+                }}
+                animate={{
+                  y: [0, Math.random() * -100, 0],
+                  x: [0, Math.random() * 100 - 50, 0],
+                  opacity: [0.1, 0.3, 0.1],
+                  scale: [0.8, 1.2, 0.8],
+                }}
+                transition={{
+                  duration: Math.random() * 5 + 5,
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: "easeInOut",
+                }}
+              />
+            ))}
+          </div>
+
+          <div className="container mx-auto px-4 text-center relative z-10">
+            <motion.h2
+              className="text-3xl md:text-4xl font-bold mb-6"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+            >
+              Bereit, Ihr Image zu verändern?
+            </motion.h2>
+            <motion.p
+              className="text-white/90 max-w-2xl mx-auto mb-8"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              viewport={{ once: true }}
+            >
+              Buchen Sie Ihren Termin noch heute und lassen Sie sich von unseren Profis überraschen.
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              viewport={{ once: true }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link
+                to="/termin"
+                className="inline-flex items-center bg-white text-[#ff4081] px-8 py-3 rounded-full text-lg font-medium hover:bg-gray-100 transition-all duration-300 transform hover:translate-y-[-2px] shadow-lg hover:shadow-xl"
+              >
+                <Sparkles size={18} className="mr-2" />
+                Jetzt buchen
+              </Link>
+            </motion.div>
           </div>
         </section>
       </main>
@@ -330,162 +803,44 @@ export default function Index() {
   )
 }
 
-// Letter animation component with 3D floating effect
-function FloatingTextAnimation() {
-  const text = "BEAUTY • STYLE • ELEGANZ • PERFEKTION • QUALITÄT • INNOVATION •"
-  const controls = useAnimation()
-  const containerRef = useRef<HTMLDivElement>(null)
+// Componente para animación de contador
+interface CountUpAnimationProps {
+  target: string | number
+  suffix?: string
+  duration?: number
+}
 
-  // Break the text into individual words and then letters
-  const words = text.split(" ")
 
-  useEffect(() => {
-    controls.start("visible")
-  }, [controls])
 
-  const letterVariants: Variants = {
-    hidden: {
-      opacity: 0,
-      y: 20,
-      rotateX: 90,
-    },
-    visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      rotateX: 0,
-      transition: {
-        delay: i * 0.02,
-        duration: 0.5,
-        repeat: Number.POSITIVE_INFINITY,
-        repeatType: "reverse",
-        repeatDelay: 2,
-        ease: "easeInOut",
-      },
-    }),
-  }
 
-  const wordVariants: Variants = {
-    hidden: {
-      opacity: 0,
-      y: 50,
-      z: -100,
-    },
-    visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      z: 0,
-      transition: {
-        delay: i * 0.1,
-        duration: 1,
-        ease: "easeOut",
-      },
-    }),
-  }
 
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.3,
-      },
-    },
-  }
 
-  // Simulate 3D perspective movement based on cursor position
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        const x = e.clientX - rect.left - rect.width / 2
-        const y = e.clientY - rect.top - rect.height / 2
-        setMousePosition({ x, y })
-      }
-    }
-
-    window.addEventListener("mousemove", handleMouseMove)
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove)
-    }
-  }, [])
-
+// Componente para el icono de calendario
+function Calendar({ className = "", size = 24 }) {
   return (
-    <motion.div
-      ref={containerRef}
-      className="relative text-center flex flex-wrap justify-center transform-gpu"
-      style={{
-        perspective: "1000px",
-        transformStyle: "preserve-3d",
-      }}
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
     >
-      <motion.div
-        className="text-3d w-full text-center"
-        style={{
-          transformStyle: "preserve-3d",
-          transform: `rotateX(${mousePosition.y * 0.01}deg) rotateY(${mousePosition.x * 0.01}deg)`,
-        }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-      >
-        {words.map((word, wordIndex) => (
-          <motion.div
-            key={`word-${wordIndex}`}
-            className="inline-block mx-2 my-4"
-            variants={wordVariants}
-            custom={wordIndex}
-            style={{ transformStyle: "preserve-3d" }}
-          >
-            {Array.from(word).map((letter, letterIndex) => (
-              <motion.span
-                key={`letter-${wordIndex}-${letterIndex}`}
-                className="inline-block text-5xl md:text-7xl font-bold text-gray-500"
-                variants={letterVariants}
-                custom={wordIndex * 10 + letterIndex}
-                style={{
-                  display: "inline-block",
-                  transformStyle: "preserve-3d",
-                  textShadow: "0 4px 6px rgba(0,0,0,0.1)",
-                }}
-              >
-                {letter}
-              </motion.span>
-            ))}
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* Decorative 3D particles */}
-      <div className="absolute inset-0 pointer-events-none">
-        {[...Array(20)].map((_, i) => (
-          <motion.div
-            key={`particle-${i}`}
-            className="absolute h-2 w-2 rounded-full bg-[#ff4081]"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [0, Math.random() * -100, 0],
-              x: [0, Math.random() * 100 - 50, 0],
-              opacity: [0, 0.7, 0],
-              scale: [0, Math.random() * 2 + 0.5, 0],
-            }}
-            transition={{
-              duration: Math.random() * 5 + 3,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: "easeInOut",
-              delay: Math.random() * 5,
-            }}
-          />
-        ))}
-      </div>
-    </motion.div>
+      <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+      <line x1="16" x2="16" y1="2" y2="6" />
+      <line x1="8" x2="8" y1="2" y2="6" />
+      <line x1="3" x2="21" y1="10" y2="10" />
+      <path d="M8 14h.01" />
+      <path d="M12 14h.01" />
+      <path d="M16 14h.01" />
+      <path d="M8 18h.01" />
+      <path d="M12 18h.01" />
+      <path d="M16 18h.01" />
+    </svg>
   )
 }
 
@@ -533,5 +888,78 @@ const features = [
     title: "Flexible Öffnungszeiten",
     description: "Wir passen uns Ihrem Zeitplan an, um Ihnen maximalen Komfort zu bieten.",
     icon: Clock,
+  },
+]
+
+const stats = [
+  {
+    value: "15",
+    suffix: "+",
+    label: "Jahre Erfahrung",
+    icon: Award,
+  },
+  {
+    value: "5000",
+    suffix: "+",
+    label: "Zufriedene Kunden",
+    icon: Users,
+  },
+  {
+    value: "8",
+    suffix: "",
+    label: "Experten-Stylisten",
+    icon: Scissors,
+  },
+]
+
+const testimonials = [
+  {
+    name: "Sophie Müller",
+    rating: 5,
+    text: "Ich gehe seit Jahren zu BeautyStyle und bin immer begeistert! Maria ist eine Künstlerin mit Haaren und das gesamte Team ist sehr professionell und freundlich.",
+    date: "15.04.2023",
+    image:
+      "https://beautystyle.lweb.ch/images/cheerful-girl-cashmere-sweater-laughs-against-backdrop-blossoming-sakura-portrait-woman-yellow-hoodie-city-spring.jpg",
+  },
+  {
+    name: "Thomas Weber",
+    rating: 5,
+    text: "Zum ersten Mal dort gewesen und direkt überzeugt. Carlos hat meine Haare perfekt geschnitten und mir tolle Tipps zur Pflege gegeben.",
+    date: "22.03.2023",
+    image: "https://beautystyle.lweb.ch/images/close-up-portrait-young-smiling-man_171337-20064.jpg",
+  },
+  {
+    name: "Lisa Schmidt",
+    rating: 4,
+    text: "Die Balayage, die Laura für mich gemacht hat, ist fantastisch! Genau das, was ich mir vorgestellt habe. Der einzige Grund für 4 statt 5 Sterne ist die Wartezeit.",
+    date: "08.05.2023",
+    image: "https://beautystyle.lweb.ch/images/medium-shot-smiley-woman-holding-flowers_23-2149213138.jpg",
+  },
+]
+
+const galleryImages = [
+  {
+    src: "https://beautystyle.lweb.ch/images/front-view-beautiful-happy-woman_23-2148778255.jpg",
+    alt: "Frau mit neuem Haarschnitt",
+    title: "Moderner Bob-Schnitt",
+    description: "Ein frischer Look für den Frühling",
+  },
+  {
+    src: "https://beautystyle.lweb.ch/images/woman-shake-her-rainbow-color-hair_633478-156.jpg",
+    alt: "Frau mit bunter Haarfarbe",
+    title: "Regenbogen-Färbung",
+    description: "Ausdrucksstarke Farben für einen einzigartigen Stil",
+  },
+  {
+    src: "https://beautystyle.lweb.ch/images/crop-stylist-drying-hair-with-brush_23-2147769824.jpg",
+    alt: "Stylist beim Föhnen",
+    title: "Professionelles Styling",
+    description: "Perfektes Finish für jeden Anlass",
+  },
+  {
+    src: "https://beautystyle.lweb.ch/images/hairdresser-cut-hair-her-client-hair-salon_1157-27198.jpg",
+    alt: "Friseur beim Haareschneiden",
+    title: "Präziser Schnitt",
+    description: "Detailgenaue Arbeit für optimale Ergebnisse",
   },
 ]

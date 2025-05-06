@@ -111,7 +111,12 @@ export default function Kontakt() {
         <section className="relative py-20 bg-gray-50">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto animate-slide-up">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">Kontakt</h1>
+                   <h1
+                className="text-4xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-[#ff4081] to-[#f5578e] fade-in"
+                style={{ animationDelay: "0ms" }}
+              >
+                Kontakt
+              </h1>
               <p className="text-gray-600 text-lg mb-8">
                 Wir sind hier, um alle Ihre Fragen zu beantworten. Zögern Sie nicht, uns zu kontaktieren.
               </p>

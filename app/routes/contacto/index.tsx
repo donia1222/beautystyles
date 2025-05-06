@@ -263,7 +263,7 @@ export default function Kontakt() {
                       <Mail className="text-[#ff4081] mr-4 mt-1" size={20} />
                       <div>
                         <h4 className="font-semibold mb-1">E-Mail</h4>
-                        <p className="text-gray-600">info@beautystyle.de</p>
+                        <p className="text-gray-600">info@beautystylese.ch</p>
                       </div>
                     </div>
 

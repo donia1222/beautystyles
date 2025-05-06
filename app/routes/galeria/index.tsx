@@ -7,7 +7,17 @@ import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion"
 import Header from "~/components/header"
 import Footer from "~/components/footer"
-import { Search, ZoomIn, X, ChevronLeft, ChevronRight, Scissors } from "lucide-react"
+import { ZoomIn, X, ChevronLeft, ChevronRight, Scissors } from "lucide-react"
+
+// Añadir estos estilos para la transición del loader
+const imageLoaderStyles = `
+  .image-loader {
+    transition: opacity 0.3s ease-out;
+  }
+  .image-loader.opacity-0 {
+    opacity: 0;
+  }
+`
 
 type TextItem = {
   id: number
@@ -150,6 +160,7 @@ export default function Galeria() {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <style dangerouslySetInnerHTML={{ __html: imageLoaderStyles }} />
       <Header />
 
       <main className="flex-grow pt-24">
@@ -203,7 +214,6 @@ export default function Galeria() {
             >
               {heroSubtitle}
             </motion.p>
-
           </motion.div>
         </section>
 
@@ -280,7 +290,7 @@ export default function Galeria() {
                 className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
               >
                 {isLoading ? (
-                  // Esqueletos de carga
+                  // Esqueletos de carga durante la navegación
                   Array.from({ length: 8 }).map((_, index) => (
                     <div key={`skeleton-${index}`} className="bg-gray-200 rounded-lg h-64 animate-pulse" />
                   ))
@@ -295,12 +305,43 @@ export default function Galeria() {
                         className="relative overflow-hidden rounded-lg shadow-md group cursor-pointer hover:shadow-xl transition-shadow duration-300"
                         onClick={() => openLightbox(index)}
                       >
-                        <img
-                          src={imageUrl || "/placeholder.svg"}
-                          alt={img.alt}
-                          className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
-                          onError={(e) => (e.currentTarget.src = "/hair-salon-interior.png")}
-                        />
+                        <div className="w-full h-64 bg-gray-100 relative">
+                          {/* Loader que se muestra mientras la imagen carga */}
+                          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10 image-loader">
+                            <motion.div
+                              className="w-10 h-10 border-4 border-rose-200 border-t-rose-500 rounded-full"
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                            />
+                          </div>
+
+                          {/* Imagen con evento onLoad para ocultar el loader */}
+                          <img
+                            src={imageUrl || "/placeholder.svg"}
+                            alt={img.alt}
+                            className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
+                            onLoad={(e) => {
+                              // Ocultar el loader cuando la imagen carga
+                              const parent = e.currentTarget.parentElement
+                              const loader = parent?.querySelector(".image-loader")
+                              if (loader) {
+                                loader.classList.add("opacity-0")
+                                setTimeout(() => {
+                                  loader.classList.add("hidden")
+                                }, 300)
+                              }
+                            }}
+                            onError={(e) => {
+                              e.currentTarget.src = "/hair-salon-interior.png"
+                              // También ocultar el loader en caso de error
+                              const parent = e.currentTarget.parentElement
+                              const loader = parent?.querySelector(".image-loader")
+                              if (loader) {
+                                loader.classList.add("hidden")
+                              }
+                            }}
+                          />
+                        </div>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
                           <p className="text-white text-center font-medium">{img.alt}</p>
                           <div className="flex justify-center mt-2">

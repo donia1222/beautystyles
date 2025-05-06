@@ -2,7 +2,6 @@
 
 import { Link, useLocation } from "@remix-run/react"
 import { useEffect, useRef, useState } from "react"
-import { motion, useScroll, useTransform } from "framer-motion"
 import Header from "../components/header"
 import Footer from "../components/footer"
 import { Scissors, Star, Users, Clock, ChevronRight, ArrowRight, Camera, Sparkles } from "lucide-react"
@@ -16,29 +15,12 @@ export default function Index() {
   // Referencias para efectos de scroll
   const heroRef = useRef<HTMLDivElement>(null)
 
-  // Efectos de scroll para el hero
-  const { scrollYProgress: heroScrollProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
-  })
-
-  const heroOpacity = useTransform(heroScrollProgress, [0, 1], [1, 0])
-  const heroScale = useTransform(heroScrollProgress, [0, 1], [1, 0.8])
-  const heroY = useTransform(heroScrollProgress, [0, 1], [0, 100])
+  // Estado para la galería interactiva
+  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0)
 
   // Typing effect state
-  const [typedText, setTypedText] = useState("")
+  const [typedText, setTypedText] = useState("Entdecken Sie Ihren einzigartigen Stil")
   const fullText = "Entdecken Sie Ihren einzigartigen Stil"
-
-  // Typing effect implementation
-  useEffect(() => {
-    if (typedText.length < fullText.length) {
-      const timeout = setTimeout(() => {
-        setTypedText(fullText.slice(0, typedText.length + 1))
-      }, 30) // Cambiado de 100ms a 30ms para que sea más rápido
-      return () => clearTimeout(timeout)
-    }
-  }, [typedText, fullText])
 
   // Cerrar el menú móvil cuando cambia la ruta
   useEffect(() => {
@@ -91,126 +73,6 @@ export default function Index() {
     }
   }, [])
 
-  // Estilos para efectos de parallax
-  useEffect(() => {
-    const style = document.createElement("style")
-    style.innerHTML = `
-      /* Video parallax effect */
-      main {
-        position: relative;
-        z-index: 1;
-      }
-      
-      section:not(:first-child) {
-        position: relative;
-        z-index: 2;
-        background-color: white;
-      }
-
-      video#background-video {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        z-index: 0;
-      }
-      
-      .floating-text-container {
-        perspective: 1500px;
-        transform-style: preserve-3d;
-      }
-      
-      .text-3d {
-        transform-style: preserve-3d;
-      }
-      
-      @keyframes float {
-        0% {
-          transform: translateY(0px) translateZ(0px) rotateX(0deg);
-        }
-        50% {
-          transform: translateY(-20px) translateZ(50px) rotateX(5deg);
-        }
-        100% {
-          transform: translateY(0px) translateZ(0px) rotateX(0deg);
-        }
-      }
-      
-      .service-card {
-        transition: all 0.5s cubic-bezier(0.17, 0.55, 0.55, 1);
-      }
-      
-      .service-card:hover {
-        transform: translateY(-10px);
-      }
-      
-      .feature-icon {
-        transition: all 0.3s ease;
-      }
-      
-      .feature-card:hover .feature-icon {
-        transform: scale(1.2) rotate(10deg);
-      }
-      
-      /* Fixed animation for single execution */
-      .hero-content, .section-heading, .feature-content {
-        animation: fadeIn 1.2s ease-out forwards;
-        animation-iteration-count: 1;
-      }
-      
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      
-      .hero-button {
-        position: relative;
-        overflow: hidden;
-      }
-      
-      .hero-button::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(255, 255, 255, 0.1);
-        transform: translateX(-100%);
-        transition: transform 0.6s ease;
-      }
-      
-      .hero-button:hover::after {
-        transform: translateX(0);
-      }
-
-      /* Typing cursor animation */
-      .typing-cursor {
-        display: inline-block;
-        width: 3px;
-        height: 1em;
-        background-color: #ff4081;
-        margin-left: 2px;
-        animation: blink 1s step-end infinite;
-      }
-      
-      @keyframes blink {
-        from, to { opacity: 1; }
-        50% { opacity: 0; }
-      }
-    `
-    document.head.appendChild(style)
-
-    return () => {
-      document.head.removeChild(style)
-    }
-  }, [])
-
-  // Estado para la galería interactiva
-  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0)
-
   // Cambiar imagen de galería automáticamente
   useEffect(() => {
     const interval = setInterval(() => {
@@ -225,12 +87,9 @@ export default function Index() {
       <Header />
 
       <main className="flex-grow pt-16">
-        {/* Hero Section con Parallax */}
+        {/* Hero Section */}
         <section ref={heroRef} className="relative h-screen flex items-center">
-          <motion.div
-            className="absolute inset-0 z-0 overflow-hidden"
-            style={{ opacity: heroOpacity, scale: heroScale }}
-          >
+          <div className="absolute inset-0 z-0 overflow-hidden">
             <video
               className="absolute w-full h-full object-cover"
               autoPlay
@@ -246,36 +105,19 @@ export default function Index() {
               Your browser does not support the video tag.
             </video>
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/40"></div>
-          </motion.div>
+          </div>
 
-          <motion.div className="container mx-auto px-4 relative z-10" style={{ y: heroY }}>
+          <div className="container mx-auto px-4 relative z-10">
             <div className="max-w-2xl hero-content">
-              <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight">
-                {/* Typing effect for the headline */}
-                {typedText}
-                <span className="typing-cursor"></span>
-              </h1>
+              <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight">{typedText}</h1>
 
-              {/* Static text without animation */}
               <p className="text-xl text-white/90 mb-8 leading-relaxed">
                 Bei BeautyStyle verwandeln wir Ihr Image mit den neuesten personalisierten Schönheitsbehandlungen und
                 -techniken.
               </p>
 
-              <motion.div
-                className="flex flex-col sm:flex-row gap-4"
-                initial="hidden"
-                animate="visible"
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: {
-                    opacity: 1,
-                    y: 0,
-                    transition: { duration: 0.8, delay: 0.5 },
-                  },
-                }}
-              >
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div>
                   <Link
                     to="/termin"
                     className="hero-button bg-[#ff4081] text-white px-8 py-3 rounded-full text-lg font-medium hover:bg-[#ff4081]/90 transition-all duration-300 transform hover:translate-y-[-2px] shadow-lg hover:shadow-xl flex items-center justify-center"
@@ -283,9 +125,9 @@ export default function Index() {
                     <Calendar className="mr-2" size={18} />
                     Jetzt buchen
                   </Link>
-                </motion.div>
+                </div>
 
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+                <div>
                   <Link
                     to="/servicios"
                     className="hero-button bg-white/10 backdrop-blur-sm text-white border border-white/20 px-8 py-3 rounded-full text-lg font-medium hover:bg-white/20 transition-all duration-300 transform hover:translate-y-[-2px] flex items-center justify-center"
@@ -293,78 +135,17 @@ export default function Index() {
                     <Scissors className="mr-2" size={18} />
                     Unsere Dienstleistungen
                   </Link>
-                </motion.div>
-              </motion.div>
+                </div>
+              </div>
             </div>
-          </motion.div>
-
-          {/* Partículas decorativas */}
-          <div className="absolute inset-0 pointer-events-none">
-            {Array.from({ length: 15 }).map((_, i) => (
-              <motion.div
-                key={`hero-particle-${i}`}
-                className="absolute rounded-full bg-white"
-                style={{
-                  width: Math.random() * 4 + 1,
-                  height: Math.random() * 4 + 1,
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  opacity: Math.random() * 0.5 + 0.2,
-                }}
-                animate={{
-                  y: [0, Math.random() * -50 - 10, 0],
-                  x: [0, Math.random() * 30 - 15, 0],
-                  opacity: [0.2, 0.5, 0.2],
-                }}
-                transition={{
-                  duration: Math.random() * 5 + 3,
-                  repeat: Number.POSITIVE_INFINITY,
-                  ease: "easeInOut",
-                }}
-              />
-            ))}
           </div>
         </section>
 
-        {/* Sección con animación de texto deslizante */}
+        {/* Sección con texto deslizante */}
         <div className="relative py-16 overflow-hidden bg-white flex items-center justify-center">
-          {/* Texto flotante CENTRADO que se mueve */}
-          <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-            <motion.div
-              className="text-8xl font-bold text-[#ff4081]/10 whitespace-nowrap"
-              animate={{
-                x: [0, -1000],
-              }}
-              transition={{
-                x: {
-                  repeat: Number.POSITIVE_INFINITY,
-                  repeatType: "loop",
-                  duration: 25,
-                  ease: "linear",
-                },
-              }}
-            >
-              SCHÖNHEIT • STIL • ELEGANZ • PERFEKTION • QUALITÄT • INNOVATION • SCHÖNHEIT • STIL • ELEGANZ • PERFEKTION
-              • QUALITÄT • INNOVATION •
-            </motion.div>
-          </div>
-
-          {/* Elemento decorativo que pulsa */}
-          <motion.div
-            className="relative z-10 text-[#ff4081]"
-            animate={{
-              scale: [1, 1.2, 1],
-              rotate: [0, 10, -10, 0],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Number.POSITIVE_INFINITY,
-              repeatType: "loop",
-              ease: "easeInOut",
-            }}
-          >
+          <div className="relative z-10 text-[#ff4081]">
             <Scissors size={80} strokeWidth={1} />
-          </motion.div>
+          </div>
         </div>
 
         {/* Services Preview - Static without animations */}
@@ -387,10 +168,10 @@ export default function Index() {
                     <img
                       src={service.image || "/placeholder.svg"}
                       alt={service.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
-                      <div className="p-6 transform translate-y-10 group-hover:translate-y-0 transition-transform duration-300">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
+                      <div className="p-6">
                         <button className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-white/30 transition-colors">
                           Details ansehen
                         </button>
@@ -411,8 +192,7 @@ export default function Index() {
                       to={`/servicios#${service.slug}`}
                       className="inline-flex items-center text-[#ff4081] font-medium hover:underline"
                     >
-                      Mehr erfahren{" "}
-                      <ArrowRight size={16} className="ml-1 transition-transform group-hover:translate-x-1" />
+                      Mehr erfahren <ArrowRight size={16} className="ml-1" />
                     </Link>
                   </div>
                 </div>
@@ -433,79 +213,21 @@ export default function Index() {
         {/* Galería interactiva */}
         <section className="py-20 bg-white overflow-hidden">
           <div className="container mx-auto px-4">
-            <motion.div
-              className="text-center mb-16 section-heading"
-              initial="hidden"
-              whileInView="visible"
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                  transition: { duration: 0.8 },
-                },
-              }}
-            >
-              <motion.span
-                className="text-[#ff4081] font-medium mb-2 inline-block px-4 py-1 rounded-full bg-[#ff4081]/10"
-                initial="hidden"
-                whileInView="visible"
-                transition={{ duration: 0.5 }}
-                viewport={{ once: true }}
-                variants={{
-                  hidden: { opacity: 0, scale: 0.8 },
-                  visible: {
-                    opacity: 1,
-                    scale: 1,
-                    transition: { duration: 0.5 },
-                  },
-                }}
-              >
+            <div className="text-center mb-16 section-heading">
+              <span className="text-[#ff4081] font-medium mb-2 inline-block px-4 py-1 rounded-full bg-[#ff4081]/10">
                 UNSERE ARBEITEN
-              </motion.span>
-              <motion.h2
-                className="text-3xl md:text-4xl font-bold mb-4 mt-3"
-                initial="hidden"
-                whileInView="visible"
-                transition={{ duration: 0.8, delay: 0.2 }}
-                viewport={{ once: true }}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: {
-                    opacity: 1,
-                    y: 0,
-                    transition: { duration: 0.8, delay: 0.2 },
-                  },
-                }}
-              >
-                Galerie
-              </motion.h2>
-              <motion.p
-                className="text-gray-600 max-w-2xl mx-auto"
-                initial="hidden"
-                whileInView="visible"
-                transition={{ duration: 0.8, delay: 0.3 }}
-                viewport={{ once: true }}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: {
-                    opacity: 1,
-                    y: 0,
-                    transition: { duration: 0.8, delay: 0.3 },
-                  },
-                }}
-              >
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 mt-3">Galerie</h2>
+              <p className="text-gray-600 max-w-2xl mx-auto">
                 Entdecken Sie einige unserer besten Arbeiten und lassen Sie sich inspirieren.
-              </motion.p>
-            </motion.div>
+              </p>
+            </div>
 
             <div className="relative">
               <div className="overflow-hidden rounded-xl shadow-xl">
-                <motion.div
+                <div
                   className="flex transition-transform duration-500 ease-out h-[400px] md:h-[500px]"
-                  animate={{ x: `-${activeGalleryIndex * 100}%` }}
+                  style={{ transform: `translateX(-${activeGalleryIndex * 100}%)` }}
                 >
                   {galleryImages.map((image, index) => (
                     <div key={index} className="min-w-full relative">
@@ -520,7 +242,7 @@ export default function Index() {
                       </div>
                     </div>
                   ))}
-                </motion.div>
+                </div>
               </div>
 
               {/* Controles de galería */}
@@ -537,22 +259,8 @@ export default function Index() {
                 ))}
               </div>
 
-              <motion.div
-                className="text-center mt-8"
-                initial="hidden"
-                whileInView="visible"
-                transition={{ duration: 0.8, delay: 0.5 }}
-                viewport={{ once: true }}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: {
-                    opacity: 1,
-                    y: 0,
-                    transition: { duration: 0.8, delay: 0.5 },
-                  },
-                }}
-              >
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <div className="text-center mt-8">
+                <div>
                   <Link
                     to="/galeria"
                     className="inline-flex items-center bg-transparent border-2 border-[#ff4081] text-[#ff4081] px-6 py-3 rounded-full hover:bg-[#ff4081] hover:text-white transition-all duration-300"
@@ -560,110 +268,37 @@ export default function Index() {
                     <Camera size={18} className="mr-2" />
                     Komplette Galerie ansehen
                   </Link>
-                </motion.div>
-              </motion.div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Why Choose Us con animaciones */}
+        {/* Why Choose Us */}
         <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
           <div className="container mx-auto px-4">
-            <motion.div
-              className="text-center mb-16 section-heading"
-              initial="hidden"
-              whileInView="visible"
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                  transition: { duration: 0.8 },
-                },
-              }}
-            >
-              <motion.span
-                className="text-[#ff4081] font-medium mb-2 inline-block px-4 py-1 rounded-full bg-[#ff4081]/10"
-                initial="hidden"
-                whileInView="visible"
-                transition={{ duration: 0.5 }}
-                viewport={{ once: true }}
-                variants={{
-                  hidden: { opacity: 0, scale: 0.8 },
-                  visible: {
-                    opacity: 1,
-                    scale: 1,
-                    transition: { duration: 0.5 },
-                  },
-                }}
-              >
+            <div className="text-center mb-16 section-heading">
+              <span className="text-[#ff4081] font-medium mb-2 inline-block px-4 py-1 rounded-full bg-[#ff4081]/10">
                 UNSERE VORTEILE
-              </motion.span>
-              <motion.h2
-                className="text-3xl md:text-4xl font-bold mb-4 mt-3"
-                initial="hidden"
-                whileInView="visible"
-                transition={{ duration: 0.8, delay: 0.2 }}
-                viewport={{ once: true }}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: {
-                    opacity: 1,
-                    y: 0,
-                    transition: { duration: 0.8, delay: 0.2 },
-                  },
-                }}
-              >
-                Warum uns wählen?
-              </motion.h2>
-              <motion.p
-                className="text-gray-600 max-w-2xl mx-auto"
-                initial="hidden"
-                whileInView="visible"
-                transition={{ duration: 0.8, delay: 0.3 }}
-                viewport={{ once: true }}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: {
-                    opacity: 1,
-                    y: 0,
-                    transition: { duration: 0.8, delay: 0.3 },
-                  },
-                }}
-              >
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 mt-3">Warum uns wählen?</h2>
+              <p className="text-gray-600 max-w-2xl mx-auto">
                 Wir zeichnen uns durch einen außergewöhnlichen und personalisierten Service aus.
-              </motion.p>
-            </motion.div>
+              </p>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {features.map((feature, index) => (
-                <motion.div
+                <div
                   key={index}
                   className="feature-card bg-white p-8 rounded-xl shadow-md text-center border border-gray-100 hover:border-[#ff4081]/30 transition-colors feature-content"
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true, amount: 0.3 }}
-                  variants={{
-                    hidden: { opacity: 0, y: 50 },
-                    visible: {
-                      opacity: 1,
-                      y: 0,
-                      transition: { duration: 0.5, delay: index * 0.1 },
-                    },
-                  }}
-                  whileHover={{
-                    y: -10,
-                    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-                  }}
                 >
                   <div className="bg-gradient-to-br from-[#ff4081]/20 to-[#ff4081]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 feature-icon">
                     <feature.icon className="text-[#ff4081]" size={24} />
                   </div>
                   <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
                   <p className="text-gray-600">{feature.description}</p>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
@@ -672,68 +307,16 @@ export default function Index() {
         {/* Sección de testimonios */}
         <section className="py-20 bg-white">
           <div className="container mx-auto px-4">
-            <motion.div
-              className="text-center mb-16 section-heading"
-              initial="hidden"
-              whileInView="visible"
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                  transition: { duration: 0.8 },
-                },
-              }}
-            >
-              <motion.span
-                className="text-[#ff4081] font-medium mb-2 inline-block px-4 py-1 rounded-full bg-[#ff4081]/10"
-                initial="hidden"
-                whileInView="visible"
-                transition={{ duration: 0.5 }}
-                viewport={{ once: true }}
-                variants={{
-                  hidden: { opacity: 0, scale: 0.8 },
-                  visible: {
-                    opacity: 1,
-                    scale: 1,
-                    transition: { duration: 0.5 },
-                  },
-                }}
-              >
+            <div className="text-center mb-16 section-heading">
+              <span className="text-[#ff4081] font-medium mb-2 inline-block px-4 py-1 rounded-full bg-[#ff4081]/10">
                 KUNDENSTIMMEN
-              </motion.span>
-              <motion.h2
-                className="text-3xl md:text-4xl font-bold mb-4 mt-3"
-                initial="hidden"
-                whileInView="visible"
-                transition={{ duration: 0.8, delay: 0.2 }}
-                viewport={{ once: true }}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: {
-                    opacity: 1,
-                    y: 0,
-                    transition: { duration: 0.8, delay: 0.2 },
-                  },
-                }}
-              >
-                Was unsere Kunden sagen
-              </motion.h2>
-            </motion.div>
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 mt-3">Was unsere Kunden sagen</h2>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {testimonials.map((testimonial, index) => (
-                <motion.div
-                  key={index}
-                  className="bg-gray-50 p-6 rounded-xl shadow-md relative"
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  viewport={{ once: true, amount: 0.3 }}
-                  whileHover={{ y: -5 }}
-                >
+                <div key={index} className="bg-gray-50 p-6 rounded-xl shadow-md relative">
                   <div className="absolute -top-4 -left-4 text-[#ff4081] opacity-20">
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M11.192 15.757c0-.88-.23-1.618-.69-2.217-.326-.412-.768-.683-1.327-.812-.55-.128-1.07-.137-1.54-.028-.16-.95.1-1.626.41-2.032.76-1.018 1.058-1.733.906-2.141-.13-.352-.51-.593-1.155-.724-.33-.053-.658-.035-.953.054-.295.089-.527.236-.695.444-.387.465-.57 1.102-.55 1.912.01.467-.01.846-.06 1.138-.07.438-.21.843-.42 1.212.19.49.48.84.88 1.06.39.22.78.32 1.19.32.45 0 .8-.13 1.05-.4.25-.27.4-.6.45-.99.05-.21.08-.49.08-.84 0-.46.1-.82.29-1.09.19-.27.45-.4.78-.4.36 0 .65.12.88.35.22.23.33.56.33.99 0 .49-.18.94-.54 1.35-.36.41-.86.74-1.49.99-.64.25-1.39.37-2.27.37-.86 0-1.63-.17-2.3-.51-.67-.34-1.19-.82-1.54-1.44-.35-.62-.52-1.33-.52-2.13 0-.9.22-1.69.67-2.39.45-.7 1.06-1.24 1.83-1.63.77-.39 1.65-.59 2.63-.59 1.14 0 2.13.26 2.98.78.85.52 1.5 1.22 1.97 2.09.47.87.7 1.82.7 2.83 0 1.1-.23 2.08-.7 2.93-.47.85-1.12 1.53-1.97 2.04-.85.51-1.84.76-2.98.76-1.4 0-2.57-.35-3.51-1.06-.93-.71-1.51-1.73-1.74-3.07" />
@@ -774,67 +357,20 @@ export default function Index() {
                       <p className="text-sm text-gray-500">{testimonial.date}</p>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* CTA Section con animaciones */}
+        {/* CTA Section */}
         <section className="py-20 bg-gradient-to-r from-[#ff4081] to-[#fa4b86] text-white relative overflow-hidden">
-          {/* Partículas decorativas */}
-          <div className="absolute inset-0 pointer-events-none">
-            {Array.from({ length: 20 }).map((_, i) => (
-              <motion.div
-                key={`cta-particle-${i}`}
-                className="absolute h-2 w-2 rounded-full bg-white"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  opacity: Math.random() * 0.3 + 0.1,
-                }}
-                animate={{
-                  y: [0, Math.random() * -100, 0],
-                  x: [0, Math.random() * 100 - 50, 0],
-                  opacity: [0.1, 0.3, 0.1],
-                  scale: [0.8, 1.2, 0.8],
-                }}
-                transition={{
-                  duration: Math.random() * 5 + 5,
-                  repeat: Number.POSITIVE_INFINITY,
-                  ease: "easeInOut",
-                }}
-              />
-            ))}
-          </div>
-
           <div className="container mx-auto px-4 text-center relative z-10">
-            <motion.h2
-              className="text-3xl md:text-4xl font-bold mb-6"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-            >
-              Bereit, Ihr Image zu verändern?
-            </motion.h2>
-            <motion.p
-              className="text-white/90 max-w-2xl mx-auto mb-8"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              viewport={{ once: true }}
-            >
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">Bereit, Ihr Image zu verändern?</h2>
+            <p className="text-white/90 max-w-2xl mx-auto mb-8">
               Buchen Sie Ihren Termin noch heute und lassen Sie sich von unseren Profis überraschen.
-            </motion.p>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              viewport={{ once: true }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
+            </p>
+            <div>
               <Link
                 to="/termin"
                 className="inline-flex items-center bg-white text-[#ff4081] px-8 py-3 rounded-full text-lg font-medium hover:bg-gray-100 transition-all duration-300 transform hover:translate-y-[-2px] shadow-lg hover:shadow-xl"
@@ -842,7 +378,7 @@ export default function Index() {
                 <Sparkles size={18} className="mr-2" />
                 Jetzt buchen
               </Link>
-            </motion.div>
+            </div>
           </div>
         </section>
       </main>

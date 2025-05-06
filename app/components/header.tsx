@@ -1,7 +1,7 @@
 "use client"
 
 import { Link, useLocation } from "@remix-run/react"
-import { Home, Scissors, Camera, Users, Mail, Calendar, Menu, X } from 'lucide-react'
+import { Home, Scissors, Camera, Users, Mail, Calendar, Menu, X, FileText } from "lucide-react"
 
 export default function Header() {
   // Obtener la ruta actual para resaltar el enlace activo
@@ -25,10 +25,10 @@ export default function Header() {
 
       <header className="fixed top-0 left-0 right-0 bg-white shadow-md z-30">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-        <Link to="/" className="text-2xl font-bold">
-  <span className="text-[#e91e63]">Beauty</span>
-  <span className="text-gray-700">Style</span>
-</Link>
+          <Link to="/" className="text-2xl font-bold">
+            <span className="text-[#e91e63]">Beauty</span>
+            <span className="text-gray-700">Style</span>
+          </Link>
 
           {/* Navegación de escritorio */}
           <nav className="hidden md:flex space-x-8">
@@ -58,6 +58,15 @@ export default function Header() {
             >
               <Camera size={18} />
               <span>Galerie</span>
+            </Link>
+            <Link
+              to="/blog"
+              className={`flex items-center gap-2 transition-colors ${
+                isActive("/blog") ? activeClass : "text-gray-800 hover:text-[#e91e63]"
+              }`}
+            >
+              <FileText size={18} />
+              <span>Blog</span>
             </Link>
             <Link
               to="/nosotros"
@@ -143,6 +152,17 @@ export default function Header() {
             <Camera size={20} />
             <span>Galerie</span>
             {isActive("/galeria") && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#e91e63]"></span>}
+          </Link>
+          <Link
+            to="/blog"
+            className={`flex items-center gap-3 py-3 transition-colors ${
+              isActive("/blog") ? "text-[#e91e63] font-medium" : "text-gray-800 hover:text-[#e91e63]"
+            }`}
+            onClick={() => document.getElementById("mobile-menu-toggle")?.click()}
+          >
+            <FileText size={20} />
+            <span>Blog</span>
+            {isActive("/blog") && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#e91e63]"></span>}
           </Link>
           <Link
             to="/nosotros"

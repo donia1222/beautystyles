@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef } from "react"
+import { useRef, useEffect, useState } from "react"
 import Header from "~/components/header"
 import Footer from "~/components/footer"
 import { Award, Clock, MapPin, Phone, Instagram, Facebook, Star, Users } from "lucide-react"
@@ -11,29 +11,54 @@ export default function UeberUns() {
   const storyRef = useRef<HTMLDivElement>(null)
   const timelineRef = useRef<HTMLDivElement>(null)
 
-  // Animación para la línea de tiempo - Adjusted offset to trigger earlier
+  // Estados para los contadores
+  const [count1Value, setCount1Value] = useState(0)
+  const [count2Value, setCount2Value] = useState(0)
+  const [count3Value, setCount3Value] = useState(0)
+
+  // Animación para la línea de tiempo
   const { scrollYProgress: timelineProgress } = useScroll({
     target: timelineRef,
-    offset: ["start end", "center center"], // Changed from "end start" to "center center"
+    offset: ["start end", "center center"],
   })
 
-  const timelineWidth = useTransform(timelineProgress, [0, 0.6], ["0%", "100%"]) // Adjusted range
-  const timelineOpacity = useTransform(timelineProgress, [0, 0.1], [0, 1]) // Triggers opacity earlier
-
-  // Animación para la sección de historia - Increased amount for earlier triggering
-  const isStoryInView = useInView(storyRef, { once: false, amount: 0.5 }) // Changed from 0.3 to 0.5
+  const timelineWidth = useTransform(timelineProgress, [0, 0.6], ["0%", "100%"])
+  const timelineOpacity = useTransform(timelineProgress, [0, 0.1], [0, 1])
 
   // Animación para el contador de experiencia
   const countRef = useRef<HTMLDivElement>(null)
-  const isCountInView = useInView(countRef, { once: true, amount: 0.8 }) // Increased amount for earlier triggering
-  const count = useSpring(0, { duration: 2 })
+  const isCountInView = useInView(countRef, { once: true, amount: 0.8 })
 
-  if (isCountInView) {
-    count.set(15)
-  }
+  // Contadores animados
+  const count1 = useSpring(0, { duration: 2 })
+  const count2 = useSpring(0, { duration: 2 })
+  const count3 = useSpring(0, { duration: 2 })
+
+  // Actualizar los valores de los contadores cuando están en vista
+  useEffect(() => {
+    if (isCountInView) {
+      count1.set(15)
+      count2.set(5000)
+      count3.set(8)
+
+      // Suscribirse a los cambios de los valores para actualizar los estados
+      const unsubscribe1 = count1.onChange(setCount1Value)
+      const unsubscribe2 = count2.onChange(setCount2Value)
+      const unsubscribe3 = count3.onChange(setCount3Value)
+
+      return () => {
+        unsubscribe1()
+        unsubscribe2()
+        unsubscribe3()
+      }
+    }
+  }, [isCountInView, count1, count2, count3])
+
+  // Formatear el valor del contador 2
+  const formattedCount2 = count2Value >= 5000 ? "5K+" : Math.round(count2Value)
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen overflow-x-hidden max-w-full">
       <Header />
 
       <main className="flex-grow pt-24">
@@ -84,63 +109,47 @@ export default function UeberUns() {
                 Wohlbefinden.
               </motion.p>
 
-              {/* Contador de experiencia animado */}
-              <motion.div
-                ref={countRef}
-                className="flex flex-wrap justify-center gap-8 mt-12"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 1, delay: 0.5 }}
-              >
+              {/* Contadores animados */}
+              <div ref={countRef} className="flex flex-wrap justify-center gap-3 md:gap-8 mt-12">
                 <div className="text-center">
                   <div className="relative inline-block">
                     <div className="absolute -inset-1 bg-gradient-to-r from-[#ff4081] to-[#ff8db4] rounded-full blur-md opacity-70"></div>
-                    <div className="relative bg-white text-[#ff4081] text-4xl font-bold w-24 h-24 rounded-full flex items-center justify-center shadow-lg">
-                      <motion.span>{count}</motion.span>
+                    <div className="relative bg-white text-[#ff4081] text-3xl md:text-4xl font-bold w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center shadow-lg">
+                      <motion.span>{Math.round(count1Value)}</motion.span>
                     </div>
                   </div>
-                  <p className="mt-3 text-gray-600 font-medium">Jahre Erfahrung</p>
+                  <p className="mt-3 text-gray-600 font-medium text-sm md:text-base">Jahre Erfahrung</p>
                 </div>
 
                 <div className="text-center">
                   <div className="relative inline-block">
                     <div className="absolute -inset-1 bg-gradient-to-r from-[#ff4081] to-[#ff8db4] rounded-full blur-md opacity-70"></div>
-                    <div className="relative bg-white text-[#ff4081] text-4xl font-bold w-24 h-24 rounded-full flex items-center justify-center shadow-lg">
-                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 2 }}>
-                        5K+
-                      </motion.span>
+                    <div className="relative bg-white text-[#ff4081] text-3xl md:text-4xl font-bold w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center shadow-lg">
+                      <motion.span>{formattedCount2}</motion.span>
                     </div>
                   </div>
-                  <p className="mt-3 text-gray-600 font-medium">Zufriedene Kunden</p>
+                  <p className="mt-3 text-gray-600 font-medium text-sm md:text-base">Zufriedene Kunden</p>
                 </div>
 
                 <div className="text-center">
                   <div className="relative inline-block">
                     <div className="absolute -inset-1 bg-gradient-to-r from-[#ff4081] to-[#ff8db4] rounded-full blur-md opacity-70"></div>
-                    <div className="relative bg-white text-[#ff4081] text-4xl font-bold w-24 h-24 rounded-full flex items-center justify-center shadow-lg">
-                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 2 }}>
-                        8
-                      </motion.span>
+                    <div className="relative bg-white text-[#ff4081] text-3xl md:text-4xl font-bold w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center shadow-lg">
+                      <motion.span>{Math.round(count3Value)}</motion.span>
                     </div>
                   </div>
-                  <p className="mt-3 text-gray-600 font-medium">Experten</p>
+                  <p className="mt-3 text-gray-600 font-medium text-sm md:text-base">Experten</p>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Our Story with Parallax Effect */}
+        {/* Our Story - Static without animations */}
         <section className="py-20" ref={storyRef}>
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <motion.div
-                style={{
-                  opacity: isStoryInView ? 1 : 0,
-                  transform: isStoryInView ? "translateX(0)" : "translateX(-100px)",
-                  transition: "all 0.9s cubic-bezier(0.17, 0.55, 0.55, 1) 0.2s",
-                }}
-              >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center">
+              <div>
                 <div className="relative">
                   <div className="absolute -inset-4 bg-gradient-to-r from-[#ff4081]/20 to-[#ff8db4]/20 rounded-lg blur-md"></div>
                   <img
@@ -149,15 +158,9 @@ export default function UeberUns() {
                     className="rounded-lg shadow-lg w-full h-auto relative z-10"
                   />
                 </div>
-              </motion.div>
+              </div>
 
-              <motion.div
-                style={{
-                  opacity: isStoryInView ? 1 : 0,
-                  transform: isStoryInView ? "translateY(0)" : "translateY(50px)",
-                  transition: "all 0.9s cubic-bezier(0.17, 0.55, 0.55, 1) 0.4s",
-                }}
-              >
+              <div>
                 <h2 className="text-3xl font-bold mb-6">Unsere Geschichte</h2>
                 <p className="text-gray-600 mb-4">
                   BeautyStyle wurde 2010 mit einer klaren Vision gegründet: einen Ort zu schaffen, an dem Schönheit und
@@ -178,7 +181,7 @@ export default function UeberUns() {
                   verwenden hochwertige Produkte, die umweltfreundlich und tierversuchsfrei sind, weil wir glauben, dass
                   Schönheit verantwortungsvoll sein sollte.
                 </p>
-              </motion.div>
+              </div>
             </div>
           </div>
         </section>
@@ -206,26 +209,26 @@ export default function UeberUns() {
               <div className="relative z-10">
                 {timeline.map((item, index) => (
                   <div key={index} className="flex mb-12 relative">
-                    <div className="mr-8 relative">
+                    <div className="mr-4 md:mr-8 relative">
                       <motion.div
-                        className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center border-2 border-[#ff4081] z-20"
+                        className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-white shadow-md flex items-center justify-center border-2 border-[#ff4081] z-20"
                         initial={{ scale: 0 }}
-                        whileInView={{ scale: 1 }} // Changed to whileInView for earlier triggering
-                        viewport={{ once: false, amount: 0.6 }} // Added viewport with higher amount
+                        whileInView={{ scale: 1 }}
+                        viewport={{ once: false, amount: 0.6 }}
                         transition={{ duration: 0.5, type: "spring" }}
                       >
-                        <span className="text-[#ff4081] font-bold">{item.year}</span>
+                        <span className="text-[#ff4081] font-bold text-sm md:text-base">{item.year}</span>
                       </motion.div>
                     </div>
                     <motion.div
-                      className="bg-white p-6 rounded-lg shadow-md flex-1"
+                      className="bg-white p-4 md:p-6 rounded-lg shadow-md flex-1"
                       initial={{ opacity: 0, x: 50 }}
-                      whileInView={{ opacity: 1, x: 0 }} // Changed to whileInView for earlier triggering
-                      viewport={{ once: false, amount: 0.6 }} // Added viewport with higher amount
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: false, amount: 0.6 }}
                       transition={{ duration: 0.5, delay: index * 0.1 }}
                     >
-                      <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-                      <p className="text-gray-600">{item.description}</p>
+                      <h3 className="text-lg md:text-xl font-bold mb-2">{item.title}</h3>
+                      <p className="text-gray-600 text-sm md:text-base">{item.description}</p>
                     </motion.div>
                   </div>
                 ))}
@@ -244,14 +247,14 @@ export default function UeberUns() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
               {values.map((value, index) => (
-                <div key={index} className="bg-white rounded-xl shadow-lg p-8">
-                  <div className="bg-gradient-to-br from-[#ff4081]/20 to-[#ff4081]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div key={index} className="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                  <div className="bg-gradient-to-br from-[#ff4081]/20 to-[#ff4081]/10 w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                     <value.icon className="text-[#ff4081]" size={24} />
                   </div>
                   <h3 className="text-xl font-bold mb-3 text-center">{value.title}</h3>
-                  <p className="text-gray-600 text-center">{value.description}</p>
+                  <p className="text-gray-600 text-center text-sm md:text-base">{value.description}</p>
                 </div>
               ))}
             </div>
@@ -267,18 +270,18 @@ export default function UeberUns() {
                 Lernen Sie die Profis kennen, die Ihren neuen Look Wirklichkeit werden lassen.
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               {team.map((member, index) => (
                 <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden group">
                   <div className="relative overflow-hidden">
                     <img
                       src={member.image || "/placeholder.svg"}
                       alt={member.name}
-                      className="w-full h-64 object-cover"
+                      className="w-full h-56 md:h-64 object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#ff4081]/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-6">
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#ff4081]/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-4 md:p-6">
                       <div className="text-white text-center transform translate-y-10 group-hover:translate-y-0 transition-transform duration-300">
-                        <p className="font-medium">{member.bio}</p>
+                        <p className="font-medium text-sm md:text-base">{member.bio}</p>
                         <div className="flex justify-center space-x-4 mt-4">
                           {member.social.map((social, i) => (
                             <a
@@ -288,16 +291,16 @@ export default function UeberUns() {
                               rel="noopener noreferrer"
                               className="text-white hover:text-white/80 transition-colors"
                             >
-                              {social.icon === "IG" ? <Instagram size={20} /> : <Facebook size={20} />}
+                              {social.icon === "IG" ? <Instagram size={18} /> : <Facebook size={18} />}
                             </a>
                           ))}
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold mb-1">{member.name}</h3>
-                    <p className="text-[#ff4081] mb-3">{member.position}</p>
+                  <div className="p-4 md:p-6">
+                    <h3 className="text-lg md:text-xl font-bold mb-1">{member.name}</h3>
+                    <p className="text-[#ff4081] mb-2 text-sm md:text-base">{member.position}</p>
                   </div>
                 </div>
               ))}
@@ -305,7 +308,7 @@ export default function UeberUns() {
           </div>
         </section>
 
-        {/* Location Section with Interactive Map - Optimized for earlier animation triggering */}
+        {/* Location Section with smooth fade-in */}
         <section className="py-20">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
@@ -315,15 +318,10 @@ export default function UeberUns() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              {/* Mapa interactivo - optimized */}
-              <motion.div
-                initial={{ opacity: 0, x: -50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, amount: 0.6 }} // Increased amount for earlier triggering
-                transition={{ duration: 0.8 }}
-              >
-                <div className="rounded-lg overflow-hidden shadow-lg h-[400px] relative">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+              {/* Map with gentle fade-in */}
+              <div className="transition-opacity duration-1000 ease-in-out opacity-100">
+                <div className="rounded-lg overflow-hidden shadow-lg h-[300px] md:h-[400px] relative">
                   <iframe
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2724.064346044727!2d8.536927076938614!3d47.37436710898443!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47900a01f1c6339f%3A0xd2d0e0d1f5eb9f8a!2sZ%C3%BCrich%2C%20Switzerland!5e0!3m2!1sen!2sus!4v1683123456789!5m2!1sen!2sus"
                     width="100%"
@@ -335,43 +333,38 @@ export default function UeberUns() {
                     title="Salon Standort"
                   ></iframe>
                 </div>
-              </motion.div>
+              </div>
 
-              <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, amount: 0.6 }} // Increased amount for earlier triggering
-                transition={{ duration: 0.8 }}
-              >
-                <div className="bg-white p-8 rounded-lg shadow-md h-full">
-                  <h3 className="text-2xl font-bold mb-6">Kontaktinformationen</h3>
-                  <div className="space-y-6">
+              <div className="transition-opacity duration-1000 ease-in-out opacity-100">
+                <div className="bg-white p-6 md:p-8 rounded-lg shadow-md h-full">
+                  <h3 className="text-xl md:text-2xl font-bold mb-6">Kontaktinformationen</h3>
+                  <div className="space-y-4 md:space-y-6">
                     <div className="flex items-start">
-                      <MapPin className="text-[#ff4081] mr-4 mt-1" size={20} />
+                      <MapPin className="text-[#ff4081] mr-3 md:mr-4 mt-1" size={18} />
                       <div>
                         <h4 className="font-semibold mb-1">Adresse</h4>
-                        <p className="text-gray-600">Hauptstraße 123, Stadt</p>
+                        <p className="text-gray-600 text-sm md:text-base">Hauptstraße 123, Stadt</p>
                       </div>
                     </div>
                     <div className="flex items-start">
-                      <Phone className="text-[#ff4081] mr-4 mt-1" size={20} />
+                      <Phone className="text-[#ff4081] mr-3 md:mr-4 mt-1" size={18} />
                       <div>
                         <h4 className="font-semibold mb-1">Telefon</h4>
-                        <p className="text-gray-600">+49 123 456 789</p>
+                        <p className="text-gray-600 text-sm md:text-base">+49 123 456 789</p>
                       </div>
                     </div>
                     <div className="flex items-start">
-                      <Clock className="text-[#ff4081] mr-4 mt-1" size={20} />
+                      <Clock className="text-[#ff4081] mr-3 md:mr-4 mt-1" size={18} />
                       <div>
                         <h4 className="font-semibold mb-1">Öffnungszeiten</h4>
-                        <p className="text-gray-600">Montag - Freitag: 9:00 - 20:00</p>
-                        <p className="text-gray-600">Samstag: 9:00 - 18:00</p>
-                        <p className="text-gray-600">Sonntag: Geschlossen</p>
+                        <p className="text-gray-600 text-sm md:text-base">Montag - Freitag: 9:00 - 20:00</p>
+                        <p className="text-gray-600 text-sm md:text-base">Samstag: 9:00 - 18:00</p>
+                        <p className="text-gray-600 text-sm md:text-base">Sonntag: Geschlossen</p>
                       </div>
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </div>
         </section>
@@ -383,16 +376,16 @@ export default function UeberUns() {
               className="text-3xl md:text-4xl font-bold mb-6"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.7 }} // Increased amount for earlier triggering
+              viewport={{ once: true, amount: 0.7 }}
               transition={{ duration: 0.8 }}
             >
               Bereit für eine Veränderung?
             </motion.h2>
             <motion.p
-              className="text-white/90 max-w-2xl mx-auto mb-8"
+              className="text-white/90 max-w-2xl mx-auto mb-8 text-sm md:text-base"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.7 }} // Increased amount for earlier triggering
+              viewport={{ once: true, amount: 0.7 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
               Buchen Sie Ihren Termin noch heute und erleben Sie den BeautyStyle-Unterschied.
@@ -400,13 +393,13 @@ export default function UeberUns() {
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true, amount: 0.7 }} // Increased amount for earlier triggering
+              viewport={{ once: true, amount: 0.7 }}
               transition={{ duration: 0.5, delay: 0.4 }}
               whileHover={{ scale: 1.05 }}
             >
               <a
                 href="/reservar"
-                className="inline-block bg-white text-[#ff4081] px-8 py-3 rounded-full text-lg font-medium hover:bg-gray-100 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                className="inline-block bg-white text-[#ff4081] px-6 md:px-8 py-3 rounded-full text-base md:text-lg font-medium hover:bg-gray-100 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 Jetzt buchen
               </a>

@@ -1,47 +1,31 @@
 "use client"
 
-// app/routes/ueber-uns.tsx
-
 import { useRef } from "react"
 import Header from "~/components/header"
 import Footer from "~/components/footer"
-import { Award, Clock, MapPin, Phone, Instagram, Facebook, Scissors, Star, Users } from "lucide-react"
+import { Award, Clock, MapPin, Phone, Instagram, Facebook, Star, Users } from "lucide-react"
 import { motion, useScroll, useTransform, useInView, useSpring } from "framer-motion"
 
 export default function UeberUns() {
   // Referencias para animaciones basadas en scroll
   const storyRef = useRef<HTMLDivElement>(null)
-  const valuesRef = useRef<HTMLDivElement>(null)
-  const teamRef = useRef<HTMLDivElement>(null)
   const timelineRef = useRef<HTMLDivElement>(null)
 
-  // Animación para la línea de tiempo
+  // Animación para la línea de tiempo - Adjusted offset to trigger earlier
   const { scrollYProgress: timelineProgress } = useScroll({
     target: timelineRef,
-    offset: ["start end", "end start"],
+    offset: ["start end", "center center"], // Changed from "end start" to "center center"
   })
 
-  const timelineWidth = useTransform(timelineProgress, [0, 1], ["0%", "100%"])
-  const timelineOpacity = useTransform(timelineProgress, [0, 0.2], [0, 1])
+  const timelineWidth = useTransform(timelineProgress, [0, 0.6], ["0%", "100%"]) // Adjusted range
+  const timelineOpacity = useTransform(timelineProgress, [0, 0.1], [0, 1]) // Triggers opacity earlier
 
-  // Animación para la sección de valores
-  const { scrollYProgress: valuesProgress } = useScroll({
-    target: valuesRef,
-    offset: ["start end", "end start"],
-  })
-
-  const valuesScale = useTransform(valuesProgress, [0, 0.5], [0.8, 1])
-  const valuesOpacity = useTransform(valuesProgress, [0, 0.3], [0, 1])
-
-  // Animación para la sección de historia
-  const isStoryInView = useInView(storyRef, { once: false, amount: 0.3 })
-
-  // Animación para la sección de equipo
-  const isTeamInView = useInView(teamRef, { once: false, amount: 0.2 })
+  // Animación para la sección de historia - Increased amount for earlier triggering
+  const isStoryInView = useInView(storyRef, { once: false, amount: 0.5 }) // Changed from 0.3 to 0.5
 
   // Animación para el contador de experiencia
   const countRef = useRef<HTMLDivElement>(null)
-  const isCountInView = useInView(countRef, { once: true })
+  const isCountInView = useInView(countRef, { once: true, amount: 0.8 }) // Increased amount for earlier triggering
   const count = useSpring(0, { duration: 2 })
 
   if (isCountInView) {
@@ -146,7 +130,6 @@ export default function UeberUns() {
           </div>
         </section>
 
-
         {/* Our Story with Parallax Effect */}
         <section className="py-20" ref={storyRef}>
           <div className="container mx-auto px-4">
@@ -200,7 +183,7 @@ export default function UeberUns() {
           </div>
         </section>
 
-        {/* Timeline Section */}
+        {/* Timeline Section - Optimized for earlier animation triggering */}
         <section className="py-20 bg-gray-50" ref={timelineRef}>
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
@@ -211,7 +194,7 @@ export default function UeberUns() {
             </div>
 
             <div className="relative max-w-4xl mx-auto">
-              {/* Línea de tiempo animada */}
+              {/* Línea de tiempo animada - optimized */}
               <motion.div
                 className="absolute top-8 left-0 h-1 bg-[#ff4081]"
                 style={{
@@ -227,7 +210,8 @@ export default function UeberUns() {
                       <motion.div
                         className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center border-2 border-[#ff4081] z-20"
                         initial={{ scale: 0 }}
-                        animate={{ scale: timelineProgress.get() > index * 0.15 ? 1 : 0 }}
+                        whileInView={{ scale: 1 }} // Changed to whileInView for earlier triggering
+                        viewport={{ once: false, amount: 0.6 }} // Added viewport with higher amount
                         transition={{ duration: 0.5, type: "spring" }}
                       >
                         <span className="text-[#ff4081] font-bold">{item.year}</span>
@@ -236,10 +220,8 @@ export default function UeberUns() {
                     <motion.div
                       className="bg-white p-6 rounded-lg shadow-md flex-1"
                       initial={{ opacity: 0, x: 50 }}
-                      animate={{
-                        opacity: timelineProgress.get() > index * 0.15 ? 1 : 0,
-                        x: timelineProgress.get() > index * 0.15 ? 0 : 50,
-                      }}
+                      whileInView={{ opacity: 1, x: 0 }} // Changed to whileInView for earlier triggering
+                      viewport={{ once: false, amount: 0.6 }} // Added viewport with higher amount
                       transition={{ duration: 0.5, delay: index * 0.1 }}
                     >
                       <h3 className="text-xl font-bold mb-2">{item.title}</h3>
@@ -252,51 +234,32 @@ export default function UeberUns() {
           </div>
         </section>
 
-        {/* Values Section with 3D Cards */}
-        <section className="py-20" ref={valuesRef}>
+        {/* Values Section - Static without animations */}
+        <section className="py-20">
           <div className="container mx-auto px-4">
-            <motion.div
-              className="text-center mb-16"
-              style={{
-                scale: valuesScale,
-                opacity: valuesOpacity,
-              }}
-            >
+            <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Unsere Werte</h2>
               <p className="text-gray-600 max-w-2xl mx-auto">
                 Diese Grundsätze leiten unsere tägliche Arbeit und unser Engagement für unsere Kunden.
               </p>
-            </motion.div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {values.map((value, index) => (
-                <motion.div
-                  key={index}
-                  className="bg-white rounded-xl shadow-lg p-8 transform perspective-1000 hover:rotate-y-10 transition-all duration-500"
-                  whileHover={{
-                    scale: 1.05,
-                    rotateY: 10,
-                    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-                  }}
-                  style={{
-                    opacity: valuesProgress.get() > index * 0.2 ? 1 : 0,
-                    transform: valuesProgress.get() > index * 0.2 ? "translateY(0)" : "translateY(50px)",
-                    transition: "all 0.6s cubic-bezier(0.17, 0.55, 0.55, 1)",
-                  }}
-                >
+                <div key={index} className="bg-white rounded-xl shadow-lg p-8">
                   <div className="bg-gradient-to-br from-[#ff4081]/20 to-[#ff4081]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                     <value.icon className="text-[#ff4081]" size={24} />
                   </div>
                   <h3 className="text-xl font-bold mb-3 text-center">{value.title}</h3>
                   <p className="text-gray-600 text-center">{value.description}</p>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Team Section with Hover Effects */}
-        <section className="py-20 bg-gray-50" ref={teamRef}>
+        {/* Team Section - Static without animations */}
+        <section className="py-20 bg-gray-50">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Unser Team</h2>
@@ -306,21 +269,12 @@ export default function UeberUns() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {team.map((member, index) => (
-                <motion.div
-                  key={index}
-                  className="bg-white rounded-lg shadow-md overflow-hidden group"
-                  style={{
-                    opacity: isTeamInView ? 1 : 0,
-                    transform: isTeamInView ? "translateY(0)" : "translateY(50px)",
-                    transition: `all 0.6s cubic-bezier(0.17, 0.55, 0.55, 1) ${index * 0.1}s`,
-                  }}
-                  whileHover={{ y: -10 }}
-                >
+                <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden group">
                   <div className="relative overflow-hidden">
                     <img
                       src={member.image || "/placeholder.svg"}
                       alt={member.name}
-                      className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110"
+                      className="w-full h-64 object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#ff4081]/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-6">
                       <div className="text-white text-center transform translate-y-10 group-hover:translate-y-0 transition-transform duration-300">
@@ -345,13 +299,13 @@ export default function UeberUns() {
                     <h3 className="text-xl font-bold mb-1">{member.name}</h3>
                     <p className="text-[#ff4081] mb-3">{member.position}</p>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Location Section with Interactive Map */}
+        {/* Location Section with Interactive Map - Optimized for earlier animation triggering */}
         <section className="py-20">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
@@ -362,12 +316,12 @@ export default function UeberUns() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              {/* Mapa interactivo */}
+              {/* Mapa interactivo - optimized */}
               <motion.div
                 initial={{ opacity: 0, x: -50 }}
                 whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, amount: 0.6 }} // Increased amount for earlier triggering
                 transition={{ duration: 0.8 }}
-                viewport={{ once: true }}
               >
                 <div className="rounded-lg overflow-hidden shadow-lg h-[400px] relative">
                   <iframe
@@ -386,8 +340,8 @@ export default function UeberUns() {
               <motion.div
                 initial={{ opacity: 0, x: 50 }}
                 whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, amount: 0.6 }} // Increased amount for earlier triggering
                 transition={{ duration: 0.8 }}
-                viewport={{ once: true }}
               >
                 <div className="bg-white p-8 rounded-lg shadow-md h-full">
                   <h3 className="text-2xl font-bold mb-6">Kontaktinformationen</h3>
@@ -422,15 +376,15 @@ export default function UeberUns() {
           </div>
         </section>
 
-        {/* CTA Section */}
+        {/* CTA Section - Optimized for earlier animation triggering */}
         <section className="py-20 bg-gradient-to-r from-[#ff4081] to-[#ff8db4] text-white">
           <div className="container mx-auto px-4 text-center">
             <motion.h2
               className="text-3xl md:text-4xl font-bold mb-6"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.7 }} // Increased amount for earlier triggering
               transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
             >
               Bereit für eine Veränderung?
             </motion.h2>
@@ -438,16 +392,16 @@ export default function UeberUns() {
               className="text-white/90 max-w-2xl mx-auto mb-8"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.7 }} // Increased amount for earlier triggering
               transition={{ duration: 0.8, delay: 0.2 }}
-              viewport={{ once: true }}
             >
               Buchen Sie Ihren Termin noch heute und erleben Sie den BeautyStyle-Unterschied.
             </motion.p>
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, amount: 0.7 }} // Increased amount for earlier triggering
               transition={{ duration: 0.5, delay: 0.4 }}
-              viewport={{ once: true }}
               whileHover={{ scale: 1.05 }}
             >
               <a

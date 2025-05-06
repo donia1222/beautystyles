@@ -821,7 +821,7 @@ export default function Index() {
               whileTap={{ scale: 0.95 }}
             >
               <Link
-                to="/termin"
+                to="/reservar"
                 className="inline-flex items-center bg-white text-[#ff4081] px-8 py-3 rounded-full text-lg font-medium hover:bg-gray-100 transition-all duration-300 transform hover:translate-y-[-2px] shadow-lg hover:shadow-xl"
               >
                 <Sparkles size={18} className="mr-2" />

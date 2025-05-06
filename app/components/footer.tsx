@@ -84,7 +84,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center">
                 <Mail size={16} className="mr-2" />
-                <span>info@beautystyle.ch</span>
+                <span>info@beautystylese.ch</span>
               </li>
             </ul>
           </div>

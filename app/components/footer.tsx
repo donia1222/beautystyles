@@ -93,8 +93,11 @@ export default function Footer() {
         <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
           <p>&copy; {new Date().getFullYear()} BeautyStyle. Alle Rechte vorbehalten.</p>
         </div>
-        <p className="text-center text-sm text-gray-500 mt-8 mb-8">
+        <p className="text-center text-sm text-gray-500 mt-4 mb-2">
   Images in this template are provided by <a href="https://www.freepik.com" target="_blank" rel="noopener noreferrer">Freepik</a>
+</p>
+<p className="text-center text-sm text-gray-500 mt-2 mb-8">
+Demo page von <a href="https://www.lweb.ch" target="_blank" rel="noopener noreferrer">lweb.ch</a>
 </p>
       </div>
     </footer>
